@@ -1,0 +1,10 @@
+*.so
+tc3omega.egg-info/
+dist/
+build/
+my_tests/
+*.png
+.idea/
+**/__pycache__/
+**/.idea/
+.DS_Store
