@@ -39,7 +39,7 @@ class CLI(object):
             "name": "layer name",
             "thickness": "layer thickness",
             "Cv": "layer heat capacity [J/m^3/K]",
-            "ratio_xy": "thermal conductivity ratio (k_x/k_y)"
+            "ratio_xy": "conductivity ratio (k_x/k_y)"
         },
     }
 
@@ -97,7 +97,6 @@ class CLI(object):
 
     def get_input_value(self, k1, k2):
         if self.data[k1][k2] is None:
-            # TODO: what about multiple layers??
             x = None
             while not x:
                 x = input(self.Q_LINE_BLANK.format(self.PROMPTS[k1][k2]))
@@ -118,7 +117,7 @@ class CLI(object):
             yaml.safe_dump(self.data, f)
 
 
-def write_blank_config(path_):
+def _write_blank_config(path_):
     if os.path.isdir(path_):
         data = {}
         for k, v in CLI.PROMPTS.items():
@@ -134,7 +133,7 @@ def write_blank_config(path_):
         raise NotADirectoryError("'%s'" % path_)
 
 
-def launch_cli():
+def _launch_cli():
     for file_ in os.listdir(os.getcwd()):
         if file_ == "_incomplete.f3oc":
             print("==> fit3omega: detected incomplete file")
@@ -152,10 +151,14 @@ def launch_cli():
 
 
 if __name__ == "__main__":
+    # TODO: what about the data file? error file? ... looks for files with '3omega' in the name in cwd
     if len(sys.argv) >= 2:
         d = os.path.expanduser(sys.argv[1])
         if os.path.isdir(d):
-            write_blank_config(d)
+            _write_blank_config(d)
             print("==> fit3omega: wrote blank config file to '%s'" % d)
     else:
-        launch_cli()
+        _launch_cli()
+
+    # TODO: test dump incomplete
+    # TODO: test read incomplete
