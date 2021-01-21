@@ -1,4 +1,3 @@
-import sys
 import os
 import yaml
 
@@ -74,6 +73,7 @@ class CLI(object):
     TT_LINE_BLANK = "\t\t:: {} #{:d}: "
 
     INCOMPLETE = "_incomplete.f3oc"
+    BLANK = "blank.f3oc"
 
     def __init__(self, data=None):
         if data is None:
@@ -176,7 +176,7 @@ def _write_blank_config(path_):
             keys = data[k].keys()
             data[k] = {("%s1" % k): {k: None for k in keys}}
 
-        file_ = os.path.join(path_, "blank.f3oc")
+        file_ = os.path.join(path_, CLI.BLANK)
         with open(file_, 'w') as f:
             yaml.safe_dump(data, f, sort_keys=False)
         print("wrote file: %s" % file_)
@@ -202,10 +202,23 @@ def _launch_cli():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 2:
-        _dir = os.path.expanduser(sys.argv[1])
-        if os.path.isdir(_dir):
-            _write_blank_config(_dir)
-            print("==> fit3omega: wrote blank config file to '%s'" % _dir)
-    else:
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description="create a 3-omega sample file")
+    parser.add_argument("--blank",
+                        help="write blank config file template",
+                        action="store_true", default=True)
+    parser.add_argument("--new",
+                        help="start CLI to create a new config file",
+                        action="store_true", default=False)
+    parser.add_argument("-d",
+                        help="directory that config file is written to",
+                        default=None)
+
+    args = parser.parse_args()
+
+    d = os.path.expanduser(args.d) if args.d else os.getcwd()
+    if args.new:
         _launch_cli()
+    elif args.blank:
+        _write_blank_config(d)
