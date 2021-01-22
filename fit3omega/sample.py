@@ -16,7 +16,6 @@ class Sample:
     def __init__(self, config_file):
         self.shunt = None
         self.heater = None
-        self.nanowire = None
         self.layers = []
         self.load_config(config_file)
 
@@ -28,8 +27,6 @@ class Sample:
                 self.shunt = Shunt(**v)
             elif k == "heater":
                 self.heater = Heater(**v)
-            elif k == "nanowire":
-                self.nanowire = NanowireArray(**v)
             elif k == "layers":
                 for k2, layer_dict in v.items():
                     self.layers.append(Layer(**layer_dict))
@@ -47,12 +44,6 @@ class Heater(NamedTuple):
     length: float
     width: float
     dRdT: float
-
-
-class NanowireArray(NamedTuple):
-    height: float
-    width: float
-    pitch: float
 
 
 class Layer(NamedTuple):

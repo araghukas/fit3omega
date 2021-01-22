@@ -2,7 +2,7 @@ import os
 import yaml
 
 
-class CLI(object):
+class CLI:
     HEADER = (
             "=================================\n"
             "    fit3omega config generator   \n"
@@ -16,8 +16,7 @@ class CLI(object):
     SECTION_TITLES = {
         "shunt": "Shunt Resistor",
         "heater": "Heater/Transducer",
-        "nanowire": "Nanowire Sample",
-        "layers": "Layer Configuration"
+        "layers": "Layer Configuration (top to bottom)"
     }
 
     PROMPTS = {
@@ -28,11 +27,6 @@ class CLI(object):
             "length": "line length [m]",
             "width": "line width[m]",
             "dRdT": "line dR/dT [Ohm/m]",
-        },
-        "nanowire": {
-            "height": "nanowire height [m]",
-            "width": "nanowire diameter [m]",
-            "pitch": "nanowire array pitch [m]",
         },
         "layers": {
             "name": "name",
@@ -51,11 +45,6 @@ class CLI(object):
             "width": float,
             "dRdT": float,
         },
-        "nanowire": {
-            "height": float,
-            "width": float,
-            "pitch": float
-        },
         "layers": {
             "name": str,
             "height": float,
@@ -70,7 +59,7 @@ class CLI(object):
     T_LINE_BLANK = "\t:: {}: "
 
     QQ_LINE_BLANK = "\t" + Q_LINE_BLANK
-    TT_LINE_BLANK = "\t\t:: {} #{:d}: "
+    TT_LINE_BLANK = "\t\t:: [{}] #{:d}: "
 
     INCOMPLETE = "_incomplete.f3oc"
     BLANK = "blank.f3oc"
@@ -106,6 +95,7 @@ class CLI(object):
                     self._read(k1, k2)
             print()
         self.save_data()
+        exit()
 
     def save_data(self):
         x = ""
@@ -142,7 +132,7 @@ class CLI(object):
                         yaml.safe_dump(self.data, f, sort_keys=False)
                     print("==> fit3omega: dumped incomplete config...")
                     exit(1)
-            self.data[k1]["%s%d" % (k1, i + 1)] = d
+            self.data[k1][str(i + 1)] = d
 
     def _read(self, k1, k2):
         if self.data[k1][k2]:
@@ -176,7 +166,7 @@ def _write_blank_config(path_):
 
         for k in CLI.MULTIPLES:
             keys = data[k].keys()
-            data[k] = {("%s1" % k): {k: None for k in keys}}
+            data[k] = {"1": {k: None for k in keys}}
 
         file_ = os.path.join(path_, CLI.BLANK)
         with open(file_, 'w') as f:
@@ -193,11 +183,10 @@ def _launch_cli():
 
             x = ""
             while not x:
-                x = input("Recover? [Y/n]: ")
+                x = input("Recover? [y/N]: ")
 
             if x in ['y', 'Y', 'yes', 'Yes']:
                 CLI.from_incomplete(file_).run()
-                return
             else:
                 break
     CLI().run()
