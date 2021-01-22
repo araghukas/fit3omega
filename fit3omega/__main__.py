@@ -17,26 +17,26 @@ class CLI(object):
         "shunt": "Shunt Resistor",
         "heater": "Heater/Transducer",
         "nanowire": "Nanowire Sample",
-        "layer": "Layer Configuration"
+        "layers": "Layer Configuration"
     }
 
     PROMPTS = {
         "shunt": {
-            "R_shunt": "shunt resistance [Ohm]"
+            "R": "shunt resistance [Ohm]"
         },
         "heater": {
-            "line_length": "line length [m]",
-            "line_width": "line width[m]",
-            "line_dRdT": "line dR/dT [Ohm/m]",
+            "length": "line length [m]",
+            "width": "line width[m]",
+            "dRdT": "line dR/dT [Ohm/m]",
         },
         "nanowire": {
             "height": "nanowire height [m]",
             "width": "nanowire diameter [m]",
             "pitch": "nanowire array pitch [m]",
         },
-        "layer": {
+        "layers": {
             "name": "name",
-            "thickness": "thickness [m]",
+            "height": "height [m]",
             "Cv": "heat capacity [J/m^3/K]",
             "ratio_xy": "conductivity ratio (k_x/k_y)"
         },
@@ -44,27 +44,27 @@ class CLI(object):
 
     TYPES = {
         "shunt": {
-            "R_shunt": float
+            "R": float
         },
         "heater": {
-            "line_length": float,
-            "line_width": float,
-            "line_dRdT": float,
+            "length": float,
+            "width": float,
+            "dRdT": float,
         },
         "nanowire": {
             "height": float,
             "width": float,
             "pitch": float
         },
-        "layer": {
+        "layers": {
             "name": str,
-            "thickness": float,
+            "height": float,
             "Cv": float,
             "ratio_xy": float,
         },
     }
 
-    MULTIPLES = ["layer"]
+    MULTIPLES = ["layers"]
 
     Q_LINE_BLANK = "\t   --> {:>33}: "
     T_LINE_BLANK = "\t:: {}: "
@@ -155,6 +155,8 @@ class CLI(object):
             t = self.TYPES[k1][k2]
             self.data[k1][k2] = t(x)
         except ValueError:
+
+            # delete null entries
             for k1, v1 in self.data.items():
                 for k2, v2 in v1.items():
                     if v2 is None:
@@ -217,8 +219,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    d = os.path.expanduser(args.d) if args.d else os.getcwd()
+    d_ = os.path.expanduser(args.d) if args.d else os.getcwd()
     if args.new:
         _launch_cli()
     elif args.blank:
-        _write_blank_config(d)
+        _write_blank_config(d_)
