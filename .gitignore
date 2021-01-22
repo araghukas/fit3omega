@@ -8,3 +8,4 @@ my_tests/
 **/__pycache__/
 **/.idea/
 .DS_Store
+*.f3oc
