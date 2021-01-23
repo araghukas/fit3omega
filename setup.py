@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages, Extension
 from fit3omega import __version__
 
-C_module = Extension('intglib', sources=['./fit3omega/intglib.c',
-                                         './fit3omega/intgmodule.c'])
+C_module = Extension('intglib', sources=['./integrate/intglib.c',
+                                         './integrate/intgmodule.c'])
 
 setup(
     name="fit3omega",
