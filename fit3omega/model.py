@@ -2,11 +2,9 @@ import numpy as np
 
 from .sample import *
 from .data import Data, ACReading
+import fit3omega.plot as plot
 
 ROOT2 = np.sqrt(2)
-
-
-# TODO: 2-component EVERYTHING
 
 
 class Model:
@@ -41,6 +39,10 @@ class Model:
         return self.sample.heater
 
     @property
+    def omegas(self) -> np.array:
+        return self.data.omegas
+
+    @property
     def V(self) -> ACReading:
         return self.data.V
 
@@ -73,5 +75,7 @@ class Model:
             self._T2 = ACReading(x, y, xerr, yerr)
         return self._T2
 
-    def plot_data(self, show=True):
-        raise NotImplementedError
+    def plot_data(self, show=False):
+        plot.plot_data(self, show)
+
+
