@@ -37,6 +37,7 @@ class Sample:
 class Shunt(NamedTuple):
     """shunt resistor for current determination"""
     R: float
+    err: float
 
 
 class Heater(NamedTuple):
@@ -44,6 +45,7 @@ class Heater(NamedTuple):
     length: float
     width: float
     dRdT: float
+    dRdT_err: float
 
 
 class Layer(NamedTuple):
