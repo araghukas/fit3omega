@@ -12,6 +12,6 @@ setup(
     author_email="ghukasa@mcmaster.ca",
     license="MIT License",
     packages=find_packages(),
-    install_requires=['pyyaml', 'pandas', 'numpy'],
+    install_requires=['pyyaml', 'pandas', 'numpy', 'matplotlib'],
     ext_modules=[C_module]
 )
