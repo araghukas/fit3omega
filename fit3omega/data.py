@@ -130,7 +130,7 @@ class Data:
         for k in self.CSV_COLS[key]:
             args += (self.data[k].values,)
         for k in self.CSV_COLS['d' + key]:
-            args += (self.error[k].values / self.data[k].values,)
+            args += (self.error[k].values / self.data[k[1:]].values,)
         return ACReading(*args)
 
 
