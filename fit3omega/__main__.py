@@ -21,12 +21,14 @@ class CLI:
 
     PROMPTS = {
         "shunt": {
-            "R": "shunt resistance [Ohm]"
+            "R": "resistance [Ohm]",
+            "err": "resistance error (0.01 = 1%)"
         },
         "heater": {
             "length": "line length [m]",
             "width": "line width[m]",
             "dRdT": "line dR/dT [Ohm/m]",
+            "dRdT_err": "line dR/dT error (0.01 = 1%)"
         },
         "layers": {
             "name": "name",
@@ -38,12 +40,14 @@ class CLI:
 
     TYPES = {
         "shunt": {
-            "R": float
+            "R": float,
+            "err": float
         },
         "heater": {
             "length": float,
             "width": float,
             "dRdT": float,
+            "dRdT_err": float
         },
         "layers": {
             "name": str,
