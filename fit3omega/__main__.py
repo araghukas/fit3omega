@@ -181,7 +181,10 @@ def _write_blank_config(path_):
 
 
 def _launch_cli():
-    for file_ in os.listdir(os.getcwd()):
+    i_max = 1000
+    for i, file_ in enumerate(os.listdir(os.getcwd())):
+        if i > i_max:
+            break
         if file_ == CLI.INCOMPLETE:
             print("==> fit3omega: detected incomplete file")
 

@@ -15,7 +15,7 @@ class ACReading(NamedTuple):
 
     def abserr(self):
         """absolute error of norm"""
-        return 1 / self.norm() * np.sqrt((self.x * self.xerr)**2 + (self.y * self.yerr)**2)
+        return np.sqrt((self.x * self.xerr)**2 + (self.y * self.yerr)**2)
 
     def relerr(self):
         """relative error of norm"""
@@ -86,6 +86,10 @@ class Data:
         return self._data[self._start:self._end]
 
     @property
+    def data_file(self) -> str:
+        return self._data_file
+
+    @property
     def error(self) -> pd.DataFrame:
         if self._error is None:
             raise ValueError("no error data has been initialized")
@@ -108,13 +112,21 @@ class Data:
         self._error_file = error_csv
 
     @property
+    def no_error(self):
+        return self._error_file is None
+
+    @property
+    def omegas(self) -> np.array:
+        return 2 * np.pi * self.data['freq'].values
+
+    @property
     def V(self) -> ACReading:
         if self._V is None:
             self._V = self._get_reading("V")
         return self._V
 
     @property
-    def V3(self):
+    def V3(self) -> ACReading:
         if self._V3 is None:
             self._V3 = self._get_reading("V3")
         return self._V3
@@ -125,7 +137,7 @@ class Data:
             self._Vsh = self._get_reading("Vsh")
         return self._Vsh
 
-    def _get_reading(self, key):
+    def _get_reading(self, key) -> ACReading:
         args = tuple()
         for k in self.CSV_COLS[key]:
             args += (self.data[k].values,)

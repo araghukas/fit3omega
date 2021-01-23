@@ -8,6 +8,7 @@ ROOT2 = np.sqrt(2)
 
 
 class Model:
+    """manages sample configuration and measured data"""
     def __init__(self, sample, data):
         if type(sample) is str:
             self.sample = Sample(sample)
@@ -56,7 +57,7 @@ class Model:
 
     @property
     def Ish(self) -> ACReading:
-        """RMS series current thought heater and shunt"""
+        """RMS series current through heater and shunt"""
         if self._Ish is None:
             x = self.Vsh.x / self.shunt.R
             y = self.Vsh.y / self.shunt.R
@@ -67,6 +68,7 @@ class Model:
 
     @property
     def T2(self) -> ACReading:
+        """Temperature wave component at twice driving frequency"""
         if self._T2 is None:
             x = ROOT2 * self.V3.x / self.heater.dRdT / self.Ish.norm()
             y = -ROOT2 * self.V3.y / self.heater.dRdT / self.Ish.norm()
@@ -77,5 +79,3 @@ class Model:
 
     def plot_data(self, show=False):
         plot.plot_data(self, show)
-
-
