@@ -19,7 +19,7 @@ setup(
     author_email="ghukasa@mcmaster.ca",
     license="MIT License",
     packages=find_packages(),
-    package_data={"fit3omega", ["integrate/*"]},
+    package_data={"fit3omega": ["integrate/*"]},
     install_requires=['pyyaml', 'pandas', 'numpy', 'matplotlib'],
     ext_modules=[C_module]
 )
