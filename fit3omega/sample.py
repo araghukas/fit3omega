@@ -33,6 +33,14 @@ class Sample:
             else:
                 raise ValueError("unrecognized configuration key '%s'" % k)
 
+    @property
+    def ds(self):
+        return [layer.height for layer in self.layers]
+
+    @property
+    def Cvs(self):
+        return [layer.Cv for layer in self.layers]
+
 
 class Shunt(NamedTuple):
     """shunt resistor for current determination"""
