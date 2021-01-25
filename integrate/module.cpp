@@ -1,10 +1,85 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "integrate.h"
+#include "intg.h"
 
 
-PyObject* convert_complex_array(std::complex<double>* arr, int nf)
+struct IntegralArgs {
+  const vector<double>& o_;
+  const vector<double>& d_;
+  const vector<double>& kx_;
+  const vector<double>& ky_;
+  const vector<double>& C_;
+};
+
+
+bool essEqual(double a, double b)
+// returns true if doubles a and b are "essenetially" equal
 {
+  static double EPS = 1e-7;
+  return fabs(a - b) <= ( (fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * EPS );
+}
+
+
+bool operator==(IntegralArgs& a1, IntegralArgs& a2)
+{
+  int nf1 = static_cast<int>(a1.o_.size());
+  int nf2 = static_cast<int>(a2.o_.size());
+  int nl1 = static_cast<int>(a1.d_.size());
+  int nl2 = static_cast<int>(a2.d_.size());
+  
+  if (!(nf1 == nf2 && nl1 == nl2))
+    return false;
+
+  // NOTE: not checking omegas to equality
+
+  for (int i = 0; i < nl1; i++)
+    if (!essEqual(a1.d_[i],a2.d_[i]))
+      return false;
+
+  for (int i = 0; i < nl1; i++)
+    if (!essEqual(a1.kx_[i],a2.kx_[i]))
+      return false;
+
+  for (int i = 0; i < nl1; i++)
+    if (!essEqual(a1.ky_[i],a2.ky_[i]))
+      return false;
+
+  for (int i = 0; i < nl1; i++)
+    if (!essEqual(a1.C_[i],a2.C_[i]))
+      return false;
+
+  return true;
+}
+
+
+IntegralTermBT_EQ1* INTG = NULL;
+IntegralArgs* ARGS = NULL;
+IntegralTermBT_EQ1* get_integrator(vector<double>& o_,
+                                   vector<double>& d_,
+                                   vector<double>& kx_,
+                                   vector<double>& ky_,
+                                   vector<double>& C_,
+                                   double b,
+                                   double lambda_i,
+                                   double lambda_f,
+                                   int N,
+                                   char b_type)
+{
+  IntegralArgs* args = new IntegralArgs{o_, d_, kx_, ky_, C_};
+  if (INTG == NULL || args != ARGS) {
+    INTG = new IntegralTermBT_EQ1{o_,d_,kx_,ky_,C_,b,lambda_i,lambda_f,N,b_type};
+    ARGS = args;
+  }
+  else
+    delete args;
+
+  return INTG;
+}
+
+
+PyObject* convert_complex_array(complex<double>* arr, int nf)
+{
+  // returns list of two lists, real parts and complex parts
   PyObject* reals = PyList_New(nf);
   PyObject* imags = PyList_New(nf);
   PyObject* output = PyList_New(2);
@@ -20,10 +95,9 @@ PyObject* convert_complex_array(std::complex<double>* arr, int nf)
 }
 
 
-static PyObject *Intg(PyObject *self, PyObject *args)
+static PyObject* Integrate(PyObject* self, PyObject *args)
 {
-  int nf;
-  int nl;
+  // for args from Python side
   PyObject* omegas;
   PyObject* ds;
   PyObject* kxs;
@@ -35,10 +109,9 @@ static PyObject *Intg(PyObject *self, PyObject *args)
   int N;
   char b_type;
 
+  // assign above variables
   if (!PyArg_ParseTuple(args,
-                        "iiOOOOOdddic",
-                        &nf,
-                        &nl,
+                        "OOOOOdddic",
                         &omegas,
                         &ds,
                         &kxs,
@@ -51,58 +124,60 @@ static PyObject *Intg(PyObject *self, PyObject *args)
                         &b_type))
     return NULL;
 
-  int n = PyObject_Length(ds);
+  int nl = PyObject_Length(ds);
+  int nf = PyObject_Length(omegas);
 
-  if (n < 0)
+  if (nl < 0 || nf < 0)
     return NULL;
 
-  double omegas_[n];
-  double ds_[n];
-  double kxs_[n];
-  double kys_[n];
-  double Cvs_[n];
+  vector<double> o_(nf);
+  vector<double> d_(nl);
+  vector<double> kx_(nl);
+  vector<double> ky_(nl);
+  vector<double> C_(nl);
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < nf; i++) {
     PyObject* omega = PyList_GetItem(omegas, i);
-    omegas_[i] = PyFloat_AsDouble(omega);
-    
-    PyObject* d = PyList_GetItem(ds, i);
-    ds_[i] = PyFloat_AsDouble(d);
-    
-    PyObject* kx = PyList_GetItem(kxs, i);
-    kxs_[i] = PyFloat_AsDouble(kx);
-
-    PyObject* ky = PyList_GetItem(kys, i);
-    kys_[i] = PyFloat_AsDouble(ky);
-
-    PyObject* Cv = PyList_GetItem(Cvs, i);
-    Cvs_[i] = PyFloat_AsDouble(Cv);
+    o_[i] = PyFloat_AsDouble(omega);
   }
 
-  Sample s {nf, nl, omegas_, ds_, kxs_, kys_, Cvs_, b};
-  Integral intg {lambda_i, lambda_f, N, s, b_type};
+  for (int i = 0; i < nl; i++) {
+    PyObject* d = PyList_GetItem(ds, i);
+    d_[i] = PyFloat_AsDouble(d);
 
-  std::complex<double>* result = intg.integrate();
+    PyObject* kx = PyList_GetItem(kxs, i);
+    kx_[i] = PyFloat_AsDouble(kx);
+
+    PyObject* ky = PyList_GetItem(kys, i);
+    ky_[i] = PyFloat_AsDouble(ky);
+
+    PyObject* Cv = PyList_GetItem(Cvs, i);
+    C_[i] = PyFloat_AsDouble(Cv);
+  }
+
+  IntegralTermBT_EQ1* intg = get_integrator(
+    o_,d_,kx_,ky_,C_,b,lambda_i,lambda_f,N,b_type
+  );
   
-  return convert_complex_array(result, nf);
+  return convert_complex_array(intg->integral(), nf);
 }
 
 
 static PyMethodDef IntgLib_FunctionsTable[] = {
-  {"BTeq1", Intg, METH_VARARGS, "the integral term from Borca-Tasciuc Eq.(1)"},
+  {"integrate", Integrate, METH_VARARGS, "evaluate the integral term from Borca Eq. 1"},
   {NULL, NULL, 0, NULL}
 };
 
 
 static PyModuleDef IntgLib_Module = {
   PyModuleDef_HEAD_INIT,
-  "BTeq1",
+  "intglib",
   "C++ function for fast implementation of Borca-Tasciuc Eq. (1)",
   -1,
   IntgLib_FunctionsTable
 };
 
 
-PyMODINIT_FUNC PyInit_BTeq1(void) {
+PyMODINIT_FUNC PyInit_intglib(void) {
   return PyModule_Create(&IntgLib_Module);
 }

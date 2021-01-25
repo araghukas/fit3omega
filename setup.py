@@ -4,8 +4,8 @@ from fit3omega import __version__
 # C_module = Extension('intglib', sources=['./integrate/intglib.c',
 #                                         './integrate/intgmodule.c'])
 
-C_module = Extension('BTeq1',
-                     sources=["./integrate/integrate.cpp",
+C_module = Extension('intglib',
+                     sources=["./integrate/intg.cpp",
                               "./integrate/module.cpp"],
                      language="c++",
                      extra_compile_args=["-std=c++17", "-stdlib=libc++"],
