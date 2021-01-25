@@ -3,9 +3,9 @@
 
 complex<double>* IntegralTermBT_EQ1::fB(int i_layer, double lambda)
 {
-  double ky = (*kys)[i_layer - 1];
-  double kx = (*kxs)[i_layer - 1];
-  double Cv = (*Cvs)[i_layer - 1];
+  double ky = kys[i_layer - 1];
+  double kx = kxs[i_layer - 1];
+  double Cv = Cvs[i_layer - 1];
 
   for (int i = 0; i < nf; i++) {
     double re = kx / ky * lambda * lambda;
@@ -19,7 +19,7 @@ complex<double>* IntegralTermBT_EQ1::fB(int i_layer, double lambda)
 
 complex<double>* IntegralTermBT_EQ1::phi(int i_layer, double lambda)
 {
-  double d = (*ds)[i_layer - 1];
+  double d = ds[i_layer - 1];
   complex<double>* fB_omegas_ = fB(i_layer, lambda);
 
   for (int i = 0; i < nf; i++)
@@ -35,8 +35,8 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
     switch (b_type) {
     case 's':
       {
-        complex<double> z {-1, 0};
-        for (int i = 0; i < nf; i++) fA_omegas_[i] = z;
+        for (int i = 0; i < nf; i++)
+          fA_omegas_[i] = complex<double>{-1.0, 0.0};
         break;
       }
     case 'i':
@@ -66,8 +66,8 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
     _AB_next[i] = A_next[i] * B_next[i];
 
   complex<double>* B = fB(i_layer, lambda);
-  double k_next = (*kys)[i_layer + 1];
-  double k = (*kys)[i_layer];
+  double k_next = kys[i_layer + 1];
+  double k = kys[i_layer];
   for (int i = 0; i < nf; i++)
     _kkB[i] = k_next / (k  * B[i]);
 
@@ -99,23 +99,24 @@ complex<double>* IntegralTermBT_EQ1::integrand(double lambda)
   complex<double>* B1 = fB(1, lambda);
   complex<double> sinc_sq_ = sinc_sq(b * lambda);
   for (int i = 0; i < nf; i++)
-    _integrand[i] = complex<double>{1.0, 0.0} * sinc_sq_ / (A1[i] * B1[i]);
+    _integrand[i] = sinc_sq_ / (A1[i] * B1[i]);
   return _integrand;
 }
 
 
-complex<double>* IntegralTermBT_EQ1::integrand(double lambda,
-                                               vector<double>& d_,
-                                               vector<double>& kx_,
-                                               vector<double>& ky_,
-                                               vector<double>& Cv_,
+complex<double>* IntegralTermBT_EQ1::integrand(int nl,
+                                               double lambda,
+                                               double* d_,
+                                               double* kx_,
+                                               double* ky_,
+                                               double* Cv_,
                                                char b_type)
 {
-  nl  = static_cast<int>(d_.size());
-  ds  = &d_;
-  kxs = &kx_;
-  kys = &ky_;
-  Cvs = &Cv_;
+  this->nl = nl;
+  ds  = d_;
+  kxs = kx_;
+  kys = ky_;
+  Cvs = Cv_;
   this->b_type = b_type;
 
   complex<double>* A1 = fA(1, lambda);
@@ -127,33 +128,46 @@ complex<double>* IntegralTermBT_EQ1::integrand(double lambda,
 }
 
 
-complex<double>* IntegralTermBT_EQ1::integral(vector<double>& d_,
-                                              vector<double>& kx_,
-                                              vector<double>& ky_,
-                                              vector<double>& Cv_,
+complex<double>* IntegralTermBT_EQ1::integral(int nl,
+                                              double* d_,
+                                              double* kx_,
+                                              double* ky_,
+                                              double* Cv_,
                                               char b_type)
 {
-  nl  = static_cast<int>(d_.size());
-  ds  = &d_;
-  kxs = &kx_;
-  kys = &ky_;
-  Cvs = &Cv_;
+  this->nl  = nl;
+  ds  = d_;
+  kxs = kx_;
+  kys = ky_;
+  Cvs = Cv_;
   this->b_type = b_type;
 
-  double h = (lambda_f - lambda_i) / N;
 
-  complex<double>* fi = integrand(lambda_i);
-  for (int i = 0; i < nf; i++)
-    result[i] = complex<double>{0.5 * h, 0.0} * fi[i];
+  // get 1D logarithmic grid of `N` sample points
+  double* lambdas = new double[N];
+  for (int k = 0; k < N; k++)
+    lambdas[k] = lambda_i * pow((lambda_f / lambda_i), double(k) / (N - 1));
 
-  complex<double>* ff = integrand(lambda_f);
-  for (int i = 0; i < nf; i++)
-    result[i] += complex<double>{0.5 * h, 0.0} * ff[i];
-
-  for (int j = 1; j < N; j++) {
-    complex<double>* fx = integrand(lambda_i + j * h);
-    for (int i = 0; i < nf; i++)
-      result[i] += complex<double>{h, 0.0} * fx[i];
+  // prime function values (for each omega) at lambdas[0]
+  complex<double>* f_prev = new complex<double>[nf];
+  complex<double>* f0 = integrand(lambdas[0]);
+  for (int i = 0; i < nf; i++) {
+    result[i] = complex<double>{0.0, 0.0};
+    f_prev[i] = f0[i];
   }
+
+  // accumulate sums (for each omega)
+  for (int k = 1; k < N; k++) {
+    complex<double>* fk = integrand(lambdas[k]);
+    double dx = lambdas[k] - lambdas[k - 1];
+    for (int i = 0; i < nf; i++) {
+      result[i] += complex<double>{dx / 2.0, 0.0} * (fk[i] + f_prev[i]);
+      f_prev[i] = fk[i];
+    }
+  }
+
+  delete[] lambdas;
+  delete[] f_prev;
+
   return result;
 }

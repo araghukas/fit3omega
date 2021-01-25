@@ -1,25 +1,22 @@
 #include <complex>
 #include <vector>
-#include <iostream>
 using namespace std;
 
 
 class IntegralTermBT_EQ1 {
   const int nf;
-  const vector<double>& omegas;
-
-  int nl;
-  vector<double>* ds;
-  vector<double>* kxs;
-  vector<double>* kys;
-  vector<double>* Cvs;
-  char b_type;
-
+  const vector<double> omegas;
   const double b;
   const double lambda_i;
   const double lambda_f;
   const int N;
 
+  int nl;
+  double* ds;
+  double* kxs;
+  double* kys;
+  double* Cvs;
+  char b_type;
 
   complex<double>* result;
   complex<double>* fB_omegas_;
@@ -33,24 +30,24 @@ class IntegralTermBT_EQ1 {
   complex<double>* fB(int i_layer, double lambda);
   complex<double>* phi(int i_layer, double lambda);
   complex<double>* fA(int i_layer, double lambda);
-  complex<double> sinc_sq(double x);
   complex<double>* integrand(double lambda);
+  complex<double> sinc_sq(double x);
 
   void init_memory()
   {
-    result = new complex<double>[nf];
-    fB_omegas_ = new complex<double>[nf];
+    result      = new complex<double>[nf];
+    fB_omegas_  = new complex<double>[nf];
     phi_omegas_ = new complex<double>[nf];
-    fA_omegas_ = new complex<double>[nf];
+    fA_omegas_  = new complex<double>[nf];
 
-    _AB_next = new complex<double>[nf];
-    _kkB = new complex<double>[nf];
-    _tanh_term = new complex<double>[nf];
-    _integrand = new complex<double>[nf];
+    _AB_next    = new complex<double>[nf];
+    _kkB        = new complex<double>[nf];
+    _tanh_term  = new complex<double>[nf];
+    _integrand  = new complex<double>[nf];
   }
 
 public:
-  IntegralTermBT_EQ1(vector<double>& omegas,
+  IntegralTermBT_EQ1(vector<double> omegas,
                      double b,
                      double lambda_i,
                      double lambda_f,
@@ -64,11 +61,7 @@ public:
       N{N}
   {
     init_memory();
-    cout << "INIT:::::" << endl;
-    cout << "address: " << result << endl;
-    for (int i = 0; i < nf; i++)
-      cout << result[i] << endl;
-    cout << endl;
+    nl = 0;
   }
 
   ~IntegralTermBT_EQ1()
@@ -86,16 +79,18 @@ public:
 
   void debug(int i);
   int get_nf() { return nf; }
-  complex<double>* integrand(double lambda,
-                             vector<double>& d_,
-                             vector<double>& kx_,
-                             vector<double>& ky_,
-                             vector<double>& Cv_,
+  complex<double>* integrand(int nl,
+                             double lambda,
+                             double* d_,
+                             double* kx_,
+                             double* ky_,
+                             double* Cv_,
                              char b_type);
 
-  complex<double>* integral(vector<double>& d_,
-                            vector<double>& kx_,
-                            vector<double>& ky_,
-                            vector<double>& Cv_,
+  complex<double>* integral(int nl,
+                            double* d_,
+                            double* kx_,
+                            double* ky_,
+                            double* Cv_,
                             char b_type);
 };
