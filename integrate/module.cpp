@@ -4,21 +4,6 @@
 #include "intg.h"
 
 
-IntegralTermBT_EQ1* INTG = NULL;
-IntegralTermBT_EQ1* get_integrator(vector<double>& o_,
-                                   double b,
-                                   double lambda_i,
-                                   double lambda_f,
-                                   int N)
-{
-
-  if (INTG == NULL)
-    INTG = new IntegralTermBT_EQ1{o_,b,lambda_i,lambda_f,N};
-
-  return INTG;
-}
-
-
 PyObject* convert_complex_array(complex<double>* arr, int nf)
 {
   // returns list of two lists, real parts and complex parts
@@ -26,10 +11,10 @@ PyObject* convert_complex_array(complex<double>* arr, int nf)
   PyObject* imags = PyList_New(nf);
   PyObject* output = PyList_New(2);
   for (int i = 0; i < nf; i++) {
-    PyObject* real = PyFloat_FromDouble(arr[i].real());
-    PyObject* imag = PyFloat_FromDouble(arr[i].imag());
-    PyList_SetItem(reals, i, real);
-    PyList_SetItem(imags, i, imag);
+    PyObject* re = PyFloat_FromDouble(arr[i].real());
+    PyObject* im = PyFloat_FromDouble(arr[i].imag());
+    PyList_SetItem(reals, i, re);
+    PyList_SetItem(imags, i, im);
   }
   PyList_SetItem(output, 0, reals);
   PyList_SetItem(output, 1, imags);
@@ -37,51 +22,30 @@ PyObject* convert_complex_array(complex<double>* arr, int nf)
 }
 
 
-static PyObject* Integrate(PyObject* self, PyObject *args)
+IntegralTermBT_EQ1* INTG = NULL;
+PyObject* Integrator(PyObject* self, PyObject* args)
 {
-  // for args from Python side
-  PyObject* omegas;
+  if (INTG == NULL)
+    return NULL;
+
   PyObject* ds;
   PyObject* kxs;
   PyObject* kys;
   PyObject* Cvs;
-  double b;
-  double lambda_i;
-  double lambda_f;
-  int N;
   char b_type;
 
-  // assign above variables
-  if (!PyArg_ParseTuple(args,
-                        "OOOOOdddic",
-                        &omegas,
-                        &ds,
-                        &kxs,
-                        &kys,
-                        &Cvs,
-                        &b,
-                        &lambda_i,
-                        &lambda_f,
-                        &N,
-                        &b_type))
+  if (!PyArg_ParseTuple(args,"OOOOc",&ds,&kxs,&kys,&Cvs,&b_type))
     return NULL;
 
   int nl = PyObject_Length(ds);
-  int nf = PyObject_Length(omegas);
 
-  if (nl < 0 || nf < 0)
+  if (nl < 0)
     return NULL;
 
-  vector<double> o_(nf);
   vector<double> d_(nl);
   vector<double> kx_(nl);
   vector<double> ky_(nl);
-  vector<double> C_(nl);
-
-  for (int i = 0; i < nf; i++) {
-    PyObject* omega = PyList_GetItem(omegas, i);
-    o_[i] = PyFloat_AsDouble(omega);
-  }
+  vector<double> Cv_(nl);
 
   for (int i = 0; i < nl; i++) {
     PyObject* d = PyList_GetItem(ds, i);
@@ -94,18 +58,51 @@ static PyObject* Integrate(PyObject* self, PyObject *args)
     ky_[i] = PyFloat_AsDouble(ky);
 
     PyObject* Cv = PyList_GetItem(Cvs, i);
-    C_[i] = PyFloat_AsDouble(Cv);
+    Cv_[i] = PyFloat_AsDouble(Cv);
   }
 
-  // new or same integrator object
-  IntegralTermBT_EQ1* intg = get_integrator(o_,b,lambda_i,lambda_f,N);
-  complex<double>* result = intg->integral(d_, kx_, ky_, C_, b_type);
-  return convert_complex_array(result, nf);
+  complex<double>* result = INTG->integral(d_, kx_, ky_, Cv_, b_type);
+  return convert_complex_array(result, INTG->get_nf());
+}
+
+static PyMethodDef integrator = {"integrator", Integrator, METH_VARARGS,
+                                 "from-Python callable integrator function"};
+
+
+PyObject* GetIntegrator(PyObject* self, PyObject* args)
+// parametrize and return a function that Python can call
+{
+  PyObject* omegas_;
+  double b;
+  double lambda_i;
+  double lambda_f;
+  int N;
+
+  if (!PyArg_ParseTuple(args,"Odddi",&omegas_,&b,&lambda_i,&lambda_f,&N))
+    return NULL;
+
+  int nf = PyObject_Length(omegas_);
+
+  if (nf < 0)
+    return NULL;
+
+  vector<double> omegas(nf);
+  for (int i = 0; i < nf; i++) {
+    PyObject* omega = PyList_GetItem(omegas_, i);
+    omegas[i] = PyFloat_AsDouble(omega);
+  }
+
+  if (INTG != NULL)
+    delete INTG;
+
+  INTG = new IntegralTermBT_EQ1{omegas, b, lambda_i, lambda_f, N};
+  return PyCFunction_New(&integrator, NULL);
 }
 
 
 static PyMethodDef IntgLib_FunctionsTable[] = {
-  {"integrate", Integrate, METH_VARARGS, "evaluate the integral term from Borca Eq. 1"},
+  {"get_integrator", GetIntegrator, METH_VARARGS,
+   "get the from-Python callable integrator function"},
   {NULL, NULL, 0, NULL}
 };
 

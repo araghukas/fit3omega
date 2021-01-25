@@ -12,7 +12,7 @@ complex<double>* IntegralTermBT_EQ1::fB(int i_layer, double lambda)
     double im = 2.0 * omegas[i] * Cv / ky;
     fB_omegas_[i] = sqrt(complex<double> {re, im});
   }
-  
+
   return fB_omegas_;
 }
 
@@ -21,7 +21,7 @@ complex<double>* IntegralTermBT_EQ1::phi(int i_layer, double lambda)
 {
   double d = (*ds)[i_layer - 1];
   complex<double>* fB_omegas_ = fB(i_layer, lambda);
-  
+
   for (int i = 0; i < nf; i++)
     phi_omegas_[i] = fB_omegas_[i] * d;
 
@@ -42,15 +42,19 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
     case 'i':
       {
         complex<double>* phi_omegas_ = phi(nl, lambda);
-        for (int i = 0; i < nf; i++) fA_omegas_[i] = -1.0 * tanh(phi_omegas_[i]);
+        for (int i = 0; i < nf; i++)
+          fA_omegas_[i] = complex<double>{-1.0, 0.0} * tanh(phi_omegas_[i]);
         break;
       }
     case 'a':
       {
         complex<double>* phi_omegas_ = phi(nl, lambda);
-        for (int i = 0; i < nf; i++) fA_omegas_[i] = -1.0 / tanh(phi_omegas_[i]);
+        for (int i = 0; i < nf; i++)
+          fA_omegas_[i] = complex<double>{-1.0, 0.0} / tanh(phi_omegas_[i]);
         break;
       }
+    default:
+      throw invalid_argument("unknown boundary specifier");
     }
 
     return fA_omegas_;
@@ -60,7 +64,7 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
   complex<double>* B_next = fB(i_layer + 1, lambda);
   for (int i = 0; i < nf; i++)
     _AB_next[i] = A_next[i] * B_next[i];
-  
+
   complex<double>* B = fB(i_layer, lambda);
   double k_next = (*kys)[i_layer + 1];
   double k = (*kys)[i_layer];
@@ -85,7 +89,7 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
 complex<double> IntegralTermBT_EQ1::sinc_sq(double x)
 {
   double sinc = sin(x) / x;
-  return complex<double>{sinc * sinc, 0};
+  return complex<double>{sinc * sinc, 0.0};
 }
 
 
@@ -100,35 +104,56 @@ complex<double>* IntegralTermBT_EQ1::integrand(double lambda)
 }
 
 
+complex<double>* IntegralTermBT_EQ1::integrand(double lambda,
+                                               vector<double>& d_,
+                                               vector<double>& kx_,
+                                               vector<double>& ky_,
+                                               vector<double>& Cv_,
+                                               char b_type)
+{
+  nl  = static_cast<int>(d_.size());
+  ds  = &d_;
+  kxs = &kx_;
+  kys = &ky_;
+  Cvs = &Cv_;
+  this->b_type = b_type;
+
+  complex<double>* A1 = fA(1, lambda);
+  complex<double>* B1 = fB(1, lambda);
+  complex<double> sinc_sq_ = sinc_sq(b * lambda);
+  for (int i = 0; i < nf; i++)
+    _integrand[i] = complex<double>{1.0, 0.0} * sinc_sq_ / (A1[i] * B1[i]);
+  return _integrand;
+}
+
+
 complex<double>* IntegralTermBT_EQ1::integral(vector<double>& d_,
                                               vector<double>& kx_,
                                               vector<double>& ky_,
-                                              vector<double>& C_,
+                                              vector<double>& Cv_,
                                               char b_type)
 {
   nl  = static_cast<int>(d_.size());
   ds  = &d_;
   kxs = &kx_;
   kys = &ky_;
-  Cvs = &C_;
+  Cvs = &Cv_;
   this->b_type = b_type;
 
-  
   double h = (lambda_f - lambda_i) / N;
 
   complex<double>* fi = integrand(lambda_i);
   for (int i = 0; i < nf; i++)
     result[i] = complex<double>{0.5 * h, 0.0} * fi[i];
-  
+
   complex<double>* ff = integrand(lambda_f);
   for (int i = 0; i < nf; i++)
     result[i] += complex<double>{0.5 * h, 0.0} * ff[i];
-  
+
   for (int j = 1; j < N; j++) {
     complex<double>* fx = integrand(lambda_i + j * h);
     for (int i = 0; i < nf; i++)
-      result[i] += h * fx[i];
+      result[i] += complex<double>{h, 0.0} * fx[i];
   }
-
   return result;
 }
