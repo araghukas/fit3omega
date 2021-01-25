@@ -1,77 +1,19 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <iostream>
 #include "intg.h"
 
 
-struct IntegralArgs {
-  const vector<double>& o_;
-  const vector<double>& d_;
-  const vector<double>& kx_;
-  const vector<double>& ky_;
-  const vector<double>& C_;
-};
-
-
-bool essEqual(double a, double b)
-// returns true if doubles a and b are "essenetially" equal
-{
-  static double EPS = 1e-7;
-  return fabs(a - b) <= ( (fabs(a) > fabs(b) ? fabs(b) : fabs(a)) * EPS );
-}
-
-
-bool operator==(IntegralArgs& a1, IntegralArgs& a2)
-{
-  int nf1 = static_cast<int>(a1.o_.size());
-  int nf2 = static_cast<int>(a2.o_.size());
-  int nl1 = static_cast<int>(a1.d_.size());
-  int nl2 = static_cast<int>(a2.d_.size());
-  
-  if (!(nf1 == nf2 && nl1 == nl2))
-    return false;
-
-  // NOTE: not checking omegas to equality
-
-  for (int i = 0; i < nl1; i++)
-    if (!essEqual(a1.d_[i],a2.d_[i]))
-      return false;
-
-  for (int i = 0; i < nl1; i++)
-    if (!essEqual(a1.kx_[i],a2.kx_[i]))
-      return false;
-
-  for (int i = 0; i < nl1; i++)
-    if (!essEqual(a1.ky_[i],a2.ky_[i]))
-      return false;
-
-  for (int i = 0; i < nl1; i++)
-    if (!essEqual(a1.C_[i],a2.C_[i]))
-      return false;
-
-  return true;
-}
-
-
 IntegralTermBT_EQ1* INTG = NULL;
-IntegralArgs* ARGS = NULL;
 IntegralTermBT_EQ1* get_integrator(vector<double>& o_,
-                                   vector<double>& d_,
-                                   vector<double>& kx_,
-                                   vector<double>& ky_,
-                                   vector<double>& C_,
                                    double b,
                                    double lambda_i,
                                    double lambda_f,
-                                   int N,
-                                   char b_type)
+                                   int N)
 {
-  IntegralArgs* args = new IntegralArgs{o_, d_, kx_, ky_, C_};
-  if (INTG == NULL || args != ARGS) {
-    INTG = new IntegralTermBT_EQ1{o_,d_,kx_,ky_,C_,b,lambda_i,lambda_f,N,b_type};
-    ARGS = args;
-  }
-  else
-    delete args;
+
+  if (INTG == NULL)
+    INTG = new IntegralTermBT_EQ1{o_,b,lambda_i,lambda_f,N};
 
   return INTG;
 }
@@ -155,11 +97,10 @@ static PyObject* Integrate(PyObject* self, PyObject *args)
     C_[i] = PyFloat_AsDouble(Cv);
   }
 
-  IntegralTermBT_EQ1* intg = get_integrator(
-    o_,d_,kx_,ky_,C_,b,lambda_i,lambda_f,N,b_type
-  );
-  
-  return convert_complex_array(intg->integral(), nf);
+  // new or same integrator object
+  IntegralTermBT_EQ1* intg = get_integrator(o_,b,lambda_i,lambda_f,N);
+  complex<double>* result = intg->integral(d_, kx_, ky_, C_, b_type);
+  return convert_complex_array(result, nf);
 }
 
 

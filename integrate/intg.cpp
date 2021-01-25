@@ -3,9 +3,9 @@
 
 complex<double>* IntegralTermBT_EQ1::fB(int i_layer, double lambda)
 {
-  double ky = kys[i_layer - 1];
-  double kx = kxs[i_layer - 1];
-  double Cv = Cvs[i_layer - 1];
+  double ky = (*kys)[i_layer - 1];
+  double kx = (*kxs)[i_layer - 1];
+  double Cv = (*Cvs)[i_layer - 1];
 
   for (int i = 0; i < nf; i++) {
     double re = kx / ky * lambda * lambda;
@@ -19,7 +19,7 @@ complex<double>* IntegralTermBT_EQ1::fB(int i_layer, double lambda)
 
 complex<double>* IntegralTermBT_EQ1::phi(int i_layer, double lambda)
 {
-  double d = ds[i_layer - 1];
+  double d = (*ds)[i_layer - 1];
   complex<double>* fB_omegas_ = fB(i_layer, lambda);
   
   for (int i = 0; i < nf; i++)
@@ -62,8 +62,8 @@ complex<double>* IntegralTermBT_EQ1::fA(int i_layer, double lambda)
     _AB_next[i] = A_next[i] * B_next[i];
   
   complex<double>* B = fB(i_layer, lambda);
-  double k_next = kys[i_layer + 1];
-  double k = kys[i_layer];
+  double k_next = (*kys)[i_layer + 1];
+  double k = (*kys)[i_layer];
   for (int i = 0; i < nf; i++)
     _kkB[i] = k_next / (k  * B[i]);
 
@@ -100,10 +100,22 @@ complex<double>* IntegralTermBT_EQ1::integrand(double lambda)
 }
 
 
-complex<double>* IntegralTermBT_EQ1::integral()
+complex<double>* IntegralTermBT_EQ1::integral(vector<double>& d_,
+                                              vector<double>& kx_,
+                                              vector<double>& ky_,
+                                              vector<double>& C_,
+                                              char b_type)
 {
-  double h = (lambda_f - lambda_i) / N;
+  nl  = static_cast<int>(d_.size());
+  ds  = &d_;
+  kxs = &kx_;
+  kys = &ky_;
+  Cvs = &C_;
+  this->b_type = b_type;
+
   
+  double h = (lambda_f - lambda_i) / N;
+
   complex<double>* fi = integrand(lambda_i);
   for (int i = 0; i < nf; i++)
     result[i] = complex<double>{0.5 * h, 0.0} * fi[i];
