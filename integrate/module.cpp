@@ -11,7 +11,7 @@ static IntegralTermBT_EQ1* INTG = NULL;
 UTILITIES
 --------------------------------------------------------------------------------
 */
-PyObject* convert_complex_array(complex<double>* arr, int nf)
+static PyObject* convert_complex_array(complex<double>* arr, int nf)
 {
   // returns list of two lists, real parts and complex parts
   PyObject* reals = PyList_New(nf);
@@ -34,7 +34,7 @@ PyObject* convert_complex_array(complex<double>* arr, int nf)
 WRAPPED INTEGRATOR FUNCTION
 --------------------------------------------------------------------------------
 */
-PyObject* Integrator(PyObject* self, PyObject* args)
+static PyObject* Integrator(PyObject* self, PyObject* args)
 {
   if (INTG == NULL)
     return NULL;
@@ -90,7 +90,7 @@ static PyMethodDef integrator = {"integrator", Integrator, METH_VARARGS,
 WRAPPED INTEGRAND FUNCTION
 --------------------------------------------------------------------------------
 */
-PyObject* Integrand(PyObject* self, PyObject* args)
+static PyObject* Integrand(PyObject* self, PyObject* args)
 {
   if (INTG == NULL)
     return NULL;
@@ -147,7 +147,7 @@ static PyMethodDef integrand = {"integrand", Integrand, METH_VARARGS,
  METHOD GETTERS
  --------------------------------------------------------------------------------
  */
-PyObject* GetIntegrator(PyObject* self, PyObject* args)
+static PyObject* GetIntegrator(PyObject* self, PyObject* args)
 // parametrize and return a function that Python can call
 {
   PyObject* omegas_;
@@ -178,7 +178,7 @@ PyObject* GetIntegrator(PyObject* self, PyObject* args)
 }
 
 
-PyObject* GetIntegrand(PyObject* self, PyObject* args)
+static PyObject* GetIntegrand(PyObject* self, PyObject* args)
 {
   PyObject* omegas_;
   double b;

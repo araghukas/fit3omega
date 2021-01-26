@@ -8,4 +8,5 @@ build/
 sample/
 ref/
 scrap/
-integrate/main*
+integrate/*debug*
+rebuild.sh
