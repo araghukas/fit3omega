@@ -6,31 +6,42 @@
 #include <math.h>
 #include <complex.h>
 
-const int MAX_n_layers = 10;
+#define N_LAYERS 10
+#define N_OMEGAS 150
+#define N_XPTS   200
 
 
 // SAMPLE PARAMETERS
-double *omegas;
+double omegas[N_OMEGAS];
 double b;
 double lambda_i;
 double lambda_f;
-int n_pts;
 int n_layers;
-char b_type;
 int n_omegas;
+char b_type;
 
 
 // INTERMEDIATE VALUES
-double *lambdas_;
-double complex *fB_;
-double complex *fA_;
-double complex *phi_;
-double complex *AB_next_;
-double complex *kkB_;
-double complex *tanh_term_;
+double complex fB_[N_OMEGAS];
+double complex fA_ [N_OMEGAS];
+double complex phi_[N_OMEGAS];
+double complex AB_next_[N_OMEGAS];
+double complex kkB_[N_OMEGAS];
+double complex tanh_term_[N_OMEGAS];
+// double complex integrand_result_[N_OMEGAS];
+// double complex integral_result_[N_OMEGAS];
 double complex *integrand_result_;
 double complex *integral_result_;
-double complex *f_prev_;
+
+double complex f_prev_[N_OMEGAS];
+double lambdas_[N_XPTS];
+
+
+// INTEGRATION PARAMETERS
+double ds_ [N_LAYERS];
+double kxs_ [N_LAYERS];
+double kys_ [N_LAYERS];
+double Cvs_ [N_LAYERS];
 
 
 void make_logspace(double *arr, double min, double max, int size)
@@ -144,7 +155,7 @@ double complex *integral(double *ds, double *kxs, double *kys, double *Cvs)
     f_prev_[i] = f0[i];
   }
 
-  for (int k = 1; k < n_pts; k++) {
+  for (int k = 1; k < N_XPTS; k++) {
     double complex *fk = integrand(lambdas_[k],ds,kxs,kys,Cvs);
     double dx = lambdas_[k] - lambdas_[k - 1];
     for (int i = 0; i < n_omegas; i++) {
@@ -156,51 +167,6 @@ double complex *integral(double *ds, double *kxs, double *kys, double *Cvs)
 }
 
 
-void start_module(double b_,double lambda_i_,double lambda_f_,int n_pts_,int n_layers_,char b_type_,int n_omegas_)
-{
-  // TODO: check allocations!!
-
-  b = b_;
-  lambda_i = lambda_i_;
-  lambda_f = lambda_f_;
-  n_pts = n_pts_;
-  n_layers = n_layers_;
-  b_type = b_type_;
-  n_omegas = n_omegas_;
-
-  // omegas = (double *) malloc(n_omegas * sizeof(double));
-  lambdas_ = (double *) PyMem_RawMalloc(n_omegas * sizeof(double));
-  fB_ = (double complex *) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  fA_ = (double complex *) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  phi_ = (double complex *) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  AB_next_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  kkB_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  tanh_term_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  integrand_result_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  integral_result_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-  f_prev_ = (double complex*) PyMem_RawMalloc(n_omegas * sizeof(double complex));
-
-  make_logspace(lambdas_,lambda_i,lambda_f,n_pts);
-  // populate omegas and init sample inside wrapped Py func
-}
-
-
-void stop_module()
-{
-  PyMem_RawFree(lambdas_);
-  PyMem_RawFree(fB_);
-  PyMem_RawFree(fA_);
-  PyMem_RawFree(phi_);
-  PyMem_RawFree(AB_next_);
-  PyMem_RawFree(kkB_);
-  PyMem_RawFree(tanh_term_);
-  PyMem_RawFree(integrand_result_);
-  PyMem_RawFree(integral_result_);
-  PyMem_RawFree(f_prev_);
-  PyMem_RawFree(omegas);
-}
-
-
 // =================================================================================================
 //
 //
@@ -208,12 +174,6 @@ void stop_module()
 //
 //
 // =================================================================================================
-
-// ARGUMENT ARRAYS
-double ds_[MAX_n_layers];
-double kxs_[MAX_n_layers];
-double kys_[MAX_n_layers];
-double Cvs_[MAX_n_layers];
 
 
 static PyObject *convert_complex_array(double complex *arr, int size)
@@ -236,49 +196,6 @@ static PyObject *convert_complex_array(double complex *arr, int size)
 
 /*
 ----------------------------------------------------------------------------------------------------
-MODULE INITIALIZING
-----------------------------------------------------------------------------------------------------
-*/
-static PyObject *StartModule(PyObject *self, PyObject *args)
-{
-  PyObject *Py_omegas;
-  double b;
-  double lambda_i;
-  double lambda_f;
-  int n_pts;
-  int n_layers;
-  char b_type;
-
-  if (!PyArg_ParseTuple(args,"Odddiic",&Py_omegas,&b,&lambda_i,&lambda_f,&n_pts,&n_layers,&b_type))
-    return NULL;
-
-  // load provided omegas into global `omegas` array
-  int n_omegas = PyObject_Length(Py_omegas);
-  if (n_omegas < 0)
-    return NULL;
-
-  omegas = (double *) PyMem_RawMalloc(n_omegas * sizeof(double));
-
-  for (int i = 0; i < n_omegas; i++) {
-    PyObject *Py_omega = PyList_GetItem(Py_omegas, i);
-    omegas[i] = PyFloat_AsDouble(Py_omega);
-  }
-
-
-  start_module(b,lambda_i,lambda_f,n_pts,n_layers,b_type,n_omegas);
-  Py_RETURN_NONE;
-}
-
-
-static PyObject *StopModule(PyObject *self, PyObject *args)
-{
-  stop_module();
-  Py_RETURN_NONE;
-}
-
-
-/*
-----------------------------------------------------------------------------------------------------
 THE WRAPPED INTEGRAL FUNCTION
 ----------------------------------------------------------------------------------------------------
 */
@@ -295,7 +212,7 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     return NULL;
 
   int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > MAX_n_layers)
+  if (n_layers < 0 || n_layers > N_LAYERS)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -331,11 +248,12 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
   PyObject *Py_kys;
   PyObject *Py_Cvs;
 
+
   if (!PyArg_ParseTuple(args,"dOOOO",&lambda,&Py_ds,&Py_kxs,&Py_kys,&Py_Cvs))
     return NULL;
 
   int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > MAX_n_layers)
+  if (n_layers < 0 || n_layers > N_LAYERS)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -358,12 +276,39 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
 
 /*
 ----------------------------------------------------------------------------------------------------
+SET STATIC VALUES
+----------------------------------------------------------------------------------------------------
+*/
+static PyObject *Set(PyObject *self, PyObject *args)
+{
+  PyObject *omegas_Py;
+  if (!PyArg_ParseTuple(args,"Odddic",&omegas_Py,&b,&lambda_i,&lambda_f,&n_layers,&b_type))
+    return NULL;
+
+  n_omegas = PyObject_Length(omegas_Py);
+  if (n_omegas < 0 || n_omegas > N_OMEGAS)
+    return NULL;
+
+  for (int i = 0; i < n_omegas; i++) {
+    PyObject *omega_Py = PyList_GetItem(omegas_Py, i);
+    omegas[i] = PyFloat_AsDouble(omega_Py);
+  }
+
+  make_logspace(lambdas_, lambda_i, lambda_f, N_XPTS);
+
+  Py_RETURN_NONE;
+}
+
+
+
+
+/*
+----------------------------------------------------------------------------------------------------
 MODULE DEFINITIONS
 ----------------------------------------------------------------------------------------------------
 */
 static PyMethodDef Integrate_FunctionsTable[] = {
-  {"start", StartModule, METH_VARARGS, "allocate memory for the integrate module"},
-  {"stop", StopModule, METH_VARARGS, "deallocate memory for the integrate module"},
+  {"set", Set, METH_VARARGS, "mandatory set static variable values"},
   {"integral", Integral, METH_VARARGS, "computes the integral term in Borca-Tascuic Eq. (1)"},
   {"integrand", Integrand, METH_VARARGS, "computes the integrand in Bora-Tascuic Eq. (1)"},
   {NULL, NULL, 0, NULL}
@@ -380,6 +325,8 @@ static PyModuleDef Integrate_Module = {
 
 
 PyMODINIT_FUNC PyInit_intg(void) {
+  integral_result_ = (double complex *) PyMem_Malloc(N_OMEGAS * sizeof(double complex));
+  integrand_result_ = (double complex *) PyMem_Malloc(N_OMEGAS * sizeof(double complex));
   return PyModule_Create(&Integrate_Module);
 }
 
