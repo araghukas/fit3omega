@@ -1,47 +1,50 @@
 
 #define PY_SSIZE_T_CLEAN
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
+#include <ndarrayobject.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
 
-#define N_LAYERS 10
-#define N_OMEGAS 150
+#define MAX_N_LAYERS 10
+#define MAX_N_OMEGAS 150
 #define N_XPTS   200
 
 
 // SAMPLE PARAMETERS
-double omegas[N_OMEGAS];
+const double* omegas;
 double b;
 double lambda_i;
 double lambda_f;
 int n_layers;
-int n_omegas;
+npy_intp n_omegas;
 char b_type;
 
 
 // INTERMEDIATE VALUES
-double complex fB_[N_OMEGAS];
-double complex fA_ [N_OMEGAS];
-double complex phi_[N_OMEGAS];
-double complex AB_next_[N_OMEGAS];
-double complex kkB_[N_OMEGAS];
-double complex tanh_term_[N_OMEGAS];
-// double complex integrand_result_[N_OMEGAS];
-// double complex integral_result_[N_OMEGAS];
+double complex fB_[MAX_N_OMEGAS];
+double complex fA_ [MAX_N_OMEGAS];
+double complex phi_[MAX_N_OMEGAS];
+double complex AB_next_[MAX_N_OMEGAS];
+double complex kkB_[MAX_N_OMEGAS];
+double complex tanh_term_[MAX_N_OMEGAS];
+// double complex integrand_result_[MAX_N_OMEGAS];
+// double complex integral_result_[MAX_N_OMEGAS];
 double complex *integrand_result_;
 double complex *integral_result_;
 
-double complex f_prev_[N_OMEGAS];
+double complex f_prev_[MAX_N_OMEGAS];
 double lambdas_[N_XPTS];
 
 
 // INTEGRATION PARAMETERS
-double ds_ [N_LAYERS];
-double kxs_ [N_LAYERS];
-double kys_ [N_LAYERS];
-double Cvs_ [N_LAYERS];
+double ds_ [MAX_N_LAYERS];
+double kxs_ [MAX_N_LAYERS];
+double kys_ [MAX_N_LAYERS];
+double Cvs_ [MAX_N_LAYERS];
 
 
 void make_logspace(double *arr, double min, double max, int size)
@@ -176,21 +179,10 @@ double complex *integral(double *ds, double *kxs, double *kys, double *Cvs)
 // =================================================================================================
 
 
-static PyObject *convert_complex_array(double complex *arr, int size)
+static PyObject *to_complex_1darray(double complex *arr, int size)
 {
-  PyObject *reals = PyList_New(n_omegas);
-  PyObject *imags = PyList_New(n_omegas);
-  for (int i = 0; i < n_omegas; i++) {
-    double complex z = arr[i];
-    PyObject *re = PyFloat_FromDouble(creal(z));
-    PyObject *im = PyFloat_FromDouble(cimag(z));
-    PyList_SetItem(reals, i, re);
-    PyList_SetItem(imags, i, im);
-  }
-  PyObject *output = PyList_New(2);
-  PyList_SetItem(output, 0, reals);
-  PyList_SetItem(output, 1, imags);
-  return output;
+  const npy_intp dims = size;
+  return PyArray_SimpleNewFromData(1, &dims, NPY_COMPLEX128, arr);
 }
 
 
@@ -212,7 +204,7 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     return NULL;
 
   int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > N_LAYERS)
+  if (n_layers < 0 || n_layers > MAX_N_LAYERS)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -229,7 +221,7 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     Cvs_[j] = PyFloat_AsDouble(Cv);
   }
 
-  return convert_complex_array(integral(ds_,kxs_,kys_,Cvs_), n_omegas);
+  return to_complex_1darray(integral(ds_,kxs_,kys_,Cvs_), n_omegas);
 }
 
 
@@ -253,7 +245,7 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
     return NULL;
 
   int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > N_LAYERS)
+  if (n_layers < 0 || n_layers > MAX_N_LAYERS)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -270,7 +262,7 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
     Cvs_[j] = PyFloat_AsDouble(Cv);
   }
 
-  return convert_complex_array(integrand(lambda,ds_,kxs_,kys_,Cvs_), n_omegas);
+  return to_complex_1darray(integrand(lambda,ds_,kxs_,kys_,Cvs_), n_omegas);
 }
 
 
@@ -281,21 +273,21 @@ SET STATIC VALUES
 */
 static PyObject *Set(PyObject *self, PyObject *args)
 {
-  PyObject *omegas_Py;
-  if (!PyArg_ParseTuple(args,"Odddic",&omegas_Py,&b,&lambda_i,&lambda_f,&n_layers,&b_type))
+  PyArrayObject *omegas_Py;
+  if (!PyArg_ParseTuple(args,"O!dddic",&PyArray_Type,&omegas_Py,
+                                       &b,&lambda_i,&lambda_f,&n_layers,&b_type))
     return NULL;
 
-  n_omegas = PyObject_Length(omegas_Py);
-  if (n_omegas < 0 || n_omegas > N_OMEGAS)
+  n_omegas = PyArray_Size((PyObject *) omegas_Py);
+  if (n_omegas <= 0 || n_omegas > MAX_N_OMEGAS)
     return NULL;
 
-  for (int i = 0; i < n_omegas; i++) {
-    PyObject *omega_Py = PyList_GetItem(omegas_Py, i);
-    omegas[i] = PyFloat_AsDouble(omega_Py);
-  }
+  npy_intp start_index = 0;
+  omegas = PyArray_GetPtr(omegas_Py, &start_index);
+  if (omegas == NULL)
+    return NULL;
 
   make_logspace(lambdas_, lambda_i, lambda_f, N_XPTS);
-
   Py_RETURN_NONE;
 }
 
@@ -325,106 +317,8 @@ static PyModuleDef Integrate_Module = {
 
 
 PyMODINIT_FUNC PyInit_intg(void) {
-  integral_result_ = (double complex *) PyMem_Malloc(N_OMEGAS * sizeof(double complex));
-  integrand_result_ = (double complex *) PyMem_Malloc(N_OMEGAS * sizeof(double complex));
+  integral_result_ = (double complex *) PyMem_Malloc(MAX_N_OMEGAS * sizeof(double complex));
+  integrand_result_ = (double complex *) PyMem_Malloc(MAX_N_OMEGAS * sizeof(double complex));
+  import_array();
   return PyModule_Create(&Integrate_Module);
 }
-
-
-
-
-
-
-/*
----------------------------------------------------------------------------------------
-
-
-
-
-                          MAIN FOR TESTING
-
-
-
-
-----------------------------------------------------------------------------------------
-*/
-
-/*
-int main(void)
-{
-  // pretend these were parsed from Py input
-  int n_omegas0 = 39;
-  double omegas0[39] = {
-    3141.592653589793, 3453.2524929747874, 3795.8303622241842,
-    4172.393466187293, 4586.313289954719, 5041.295784799573,
-    5541.414548697101, 6091.147298498122, 6695.415960302848,
-    7359.630736976494, 8089.73854735669, 8892.2762708438,
-    9774.429274089282, 10744.095743789525, 11809.957401576448,
-    12981.5572341369, 14269.384934502563, 15684.970819492475,
-    17240.989064179787, 18951.371177672692, 22898.00049022626,
-    25169.583073304595, 27666.51666176646, 30411.157068693716,
-    33428.07790237048, 36744.29058134312, 40389.4861759443,
-    44396.30124156193, 48800.61002374043, 53641.84565131603,
-    58963.3531933268, 64812.77774072464, 71242.49098750357,
-    78310.06013055627, 86078.7632864636, 94618.15603990141,
-    104004.69419614648, 114322.41831337663, 125663.70614359173};
-  double b0 = 3.4285e-05;
-  double lambda_i0 = 0.001;
-  double lambda_f0 = 1e7;
-  int n_pts0 = 200;
-  int n_layers0 = 3;
-  char b_type0 = 's';
-
-  // this block would happen in the wrapped function
-  start_module(b0,lambda_i0,lambda_f0,n_pts0,n_layers0,b_type0,n_omegas0);
-  for (int i = 0; i < n_omegas; i++)
-    omegas[i] = omegas0[i];  // "parsing" PyList_GetItem
-
-  for (int i = 0; i < n_pts; i++)
-    printf("%.10f\n", lambdas_[i]);
-  printf("lambdas-------------------------------------\n");
-
-  // fake iteration variables
-  double ds0[3] = {50e-9, 3e-6, 300e-6};
-  double kxs0[3] = {1.0, 10.0, 100.0};
-  double kys0[3] = {1.0, 10.0, 100.0};
-  double Cvs0[3] = {1706100.0, 2124260.0, 1630300.0};
-  double complex *test_fB = fB(0,4500.0,kxs0,kys0,Cvs0);
-  for (int i = 0; i < n_omegas; i++) {
-    printf("%.10f ", creal(test_fB[i]));
-    printf("%.10f\n", cimag(test_fB[i]));
-  }
-  printf("fB-------------------------------------\n");
-
- double complex *test_phi = phi(0,4500.0,ds0,kxs0,kys0,Cvs0);
- for (int i = 0; i < n_omegas; i++) {
-   printf("%.10f ", creal(test_phi[i]));
-   printf("%.10f\n", cimag(test_phi[i]));
- }
- printf("fA-------------------------------------\n");
-
-double complex *test_fA = fA(0,4500.0,ds0,kxs0,kys0,Cvs0);
-for (int i = 0; i < n_omegas; i++) {
-  printf("%.10f ", creal(test_fA[i]));
-  printf("%.10f\n", cimag(test_fA[i]));
-}
-printf("integrand-------------------------------------\n");
-
-double complex *test_integrand = integrand(4500.0,ds0,kxs0,kys0,Cvs0);
-for (int i = 0; i < n_omegas; i++) {
- printf("%.10f ", creal(test_integrand[i]));
- printf("%.10f\n", cimag(test_integrand[i]));
-}
-printf("integral-------------------------------------\n");
-
-double complex *test_integral = integral(ds0,kxs0,kys0,Cvs0);
-for (int i = 0; i < n_omegas; i++) {
- printf("%.10f ", creal(test_integral[i]));
- printf("%.10f\n", cimag(test_integral[i]));
-}
-
-  stop_module();
-
-  return 0;
-}
-*/

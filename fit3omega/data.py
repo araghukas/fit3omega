@@ -117,7 +117,8 @@ class Data:
 
     @property
     def omegas(self) -> np.array:
-        return 2 * np.pi * self.data['freq'].values
+        omegas_ = 2 * np.pi * self.data['freq'].values
+        return np.ascontiguousarray(omegas_)
 
     @property
     def V(self) -> ACReading:
