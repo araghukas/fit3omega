@@ -99,7 +99,7 @@ class CLI:
                     self._read(k1, k2)
             print()
         self.save_data()
-        exit()
+        exit(0)
 
     def save_data(self):
         x = ""
@@ -178,6 +178,7 @@ def _write_blank_config(path_):
         print("wrote file: %s" % file_)
     else:
         raise NotADirectoryError("'%s'" % path_)
+    exit(0)
 
 
 def _launch_cli():
@@ -199,16 +200,32 @@ def _launch_cli():
     CLI().run()
 
 
+def _plot_data(sample, data, show=True):
+    from .model import Model
+    m = Model(sample, data)
+    fig = m.plot_data(show=show)
+    save_name = os.path.abspath(data).strip(".csv") + "_plot.pdf"
+    fig.savefig(save_name)
+    print("==> fit3omega: saved plot as '%s'" % save_name)
+    exit(0)
+
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
 
-    parser = ArgumentParser(description="create a 3-omega sample file")
+    parser = ArgumentParser(description="create a 3-omega sample file or plot data")
     parser.add_argument("--blank",
                         help="write blank config file template",
-                        action="store_true", default=True)
+                        action="store_true", default=False)
     parser.add_argument("--new",
                         help="start CLI to create a new config file",
                         action="store_true", default=False)
+    parser.add_argument("--show_plot",
+                        help="toggle showing plot window after plotting",
+                        action="store_true", default=False)
+    parser.add_argument("-plot_data",
+                        help="plot 3omega voltage data from sample config and data csv",
+                        nargs=2, type=str, default=None)
     parser.add_argument("-d",
                         help="directory that config file is written to",
                         default=None)
@@ -220,3 +237,8 @@ if __name__ == "__main__":
         _launch_cli()
     elif args.blank:
         _write_blank_config(d_)
+    elif args.plot_data:
+        _plot_data(*args.plot_data, show=args.show_plot)
+    else:
+        print("==> fit3omega: no arguments detected")
+        exit(0)

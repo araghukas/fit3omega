@@ -40,25 +40,25 @@ def plot_data(m, show: bool = False) -> plt.Figure:
     cy = 'red'
     cz = 'black'
 
-    ax_V.errorbar(m.omegas, m.V.x, yerr=m.V.xerr * m.V.x, color=cx)
-    ax_V.errorbar(m.omegas, m.V.y, yerr=m.V.yerr * m.V.y, color=cy)
-    ax_V.errorbar(m.omegas, m.V.norm(), yerr=m.V.abserr(), color=cz)
+    ax_V.errorbar(m.omegas, m.V.x, yerr=m.V.xerr * m.V.x, color=cx, elinewidth=.8)
+    ax_V.errorbar(m.omegas, m.V.y, yerr=m.V.yerr * m.V.y, color=cy, elinewidth=.8)
+    ax_V.errorbar(m.omegas, m.V.norm(), yerr=m.V.abserr(), color=cz, elinewidth=.8)
     ax_V.grid(which="both")
 
-    ax_Ish.errorbar(m.omegas, m.Ish.x, yerr=m.Ish.xerr * m.Ish.x, color=cx, label='X')
-    ax_Ish.errorbar(m.omegas, m.Ish.y, yerr=m.Ish.yerr * m.Ish.y, color=cy, label='Y')
-    ax_Ish.errorbar(m.omegas, m.Ish.norm(), yerr=m.Ish.abserr(), color=cz, label='R')
+    ax_Ish.errorbar(m.omegas, m.Ish.x, yerr=m.Ish.xerr * m.Ish.x, color=cx, label='X', elinewidth=.8)
+    ax_Ish.errorbar(m.omegas, m.Ish.y, yerr=m.Ish.yerr * m.Ish.y, color=cy, label='Y', elinewidth=.8)
+    ax_Ish.errorbar(m.omegas, m.Ish.norm(), yerr=m.Ish.abserr(), color=cz, label='R', elinewidth=.8)
     ax_Ish.legend(frameon=False, fontsize=15)
     ax_Ish.grid(which="both")
 
-    ax_V3.errorbar(m.omegas, m.V3.x, yerr=m.V3.xerr * m.V3.x, color=cx)
-    ax_V3.errorbar(m.omegas, m.V3.y, yerr=m.V3.yerr * m.V3.y, color=cy)
-    ax_V3.errorbar(m.omegas, m.V3.norm(), yerr=m.V3.abserr(), color=cz)
+    ax_V3.errorbar(m.omegas, m.V3.x, yerr=m.V3.xerr * m.V3.x, color=cx, elinewidth=.8)
+    ax_V3.errorbar(m.omegas, m.V3.y, yerr=m.V3.yerr * m.V3.y, color=cy, elinewidth=.8)
+    ax_V3.errorbar(m.omegas, m.V3.norm(), yerr=m.V3.abserr(), color=cz, elinewidth=.8)
     ax_V3.grid(which="both")
 
-    ax_T2.errorbar(m.omegas, m.T2.x, yerr=m.T2.xerr * m.T2.x, color=cx)
-    ax_T2.errorbar(m.omegas, m.T2.y, yerr=m.T2.yerr * m.T2.y, color=cy)
-    ax_T2.errorbar(m.omegas, m.T2.norm(), yerr=m.T2.abserr(), color=cz)
+    ax_T2.errorbar(m.omegas, m.T2.x, yerr=m.T2.xerr * m.T2.x, color=cx, elinewidth=.8)
+    ax_T2.errorbar(m.omegas, m.T2.y, yerr=m.T2.yerr * m.T2.y, color=cy, elinewidth=.8)
+    ax_T2.errorbar(m.omegas, m.T2.norm(), yerr=m.T2.abserr(), color=cz, elinewidth=.8)
     ax_T2.grid(which="both")
 
     if show:

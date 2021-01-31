@@ -21,6 +21,10 @@ class ACReading(NamedTuple):
         """relative error of norm"""
         return self.abserr() / self.norm()
 
+    def phi(self):
+        """phase"""
+        return np.arctan(self.y / self.x)
+
 
 class Data:
     CSV_COLS = {
@@ -141,9 +145,13 @@ class Data:
     def _get_reading(self, key) -> ACReading:
         args = tuple()
         for k in self.CSV_COLS[key]:
+            # average voltages
             args += (self.data[k].values,)
         for k in self.CSV_COLS['d' + key]:
-            args += (self.error[k].values / self.data[k[1:]].values,)
+            # standard deviations
+            data_values = self.data[k[1:]].values
+            data_values[data_values == 0] = 1e-12  # avoid division errors
+            args += (self.error[k].values / data_values,)
         return ACReading(*args)
 
 

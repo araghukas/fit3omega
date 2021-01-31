@@ -1,14 +1,10 @@
+import numpy as np
 from setuptools import setup, find_packages, Extension
 from fit3omega import __version__
 
-C_module = Extension('intg', sources=['./integrate/intg.c'])
-
-#
-# C_module = Extension('integrate',
-#                      sources=["./integrate/integrate.cpp"],# "./integrate/module.cpp"],
-#                      language="c++",
-#                      extra_compile_args=["-std=c++11", "-stdlib=libc++"],
-#                      extra_link_args=["-stdlib=libc++"])
+C_module = Extension("intg",
+                     sources=["./integrate/intg.c"],
+                     include_dirs=[np.get_include()])
 
 setup(
     name="fit3omega",

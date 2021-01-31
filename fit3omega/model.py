@@ -78,4 +78,4 @@ class Model:
         return self._T2
 
     def plot_data(self, show=False):
-        plot.plot_data(self, show)
+        return plot.plot_data(self, show)
