@@ -2,7 +2,7 @@
 #define PY_SSIZE_T_CLEAN
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
-#include <ndarrayobject.h>
+#include <numpy/ndarrayobject.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,12 +31,9 @@ double complex phi_[MAX_N_OMEGAS];
 double complex AB_next_[MAX_N_OMEGAS];
 double complex kkB_[MAX_N_OMEGAS];
 double complex tanh_term_[MAX_N_OMEGAS];
-// double complex integrand_result_[MAX_N_OMEGAS];
-// double complex integral_result_[MAX_N_OMEGAS];
-double complex *integrand_result_;
-double complex *integral_result_;
-
 double complex f_prev_[MAX_N_OMEGAS];
+double complex integrand_result_[MAX_N_OMEGAS];
+double complex integral_result_[MAX_N_OMEGAS];
 double lambdas_[N_XPTS];
 
 
@@ -63,6 +60,7 @@ double complex sinc_sq(double x)
 
 double complex *fB(int i_layer, double lambda, double *kxs, double *kys, double *Cvs)
 {
+  /* Borca-Tasciuc Eq.(3) */
   for (int i = 0; i < n_omegas; i++) {
     double re = kxs[i_layer] / kys[i_layer] * lambda * lambda;
     double im = 2.0 * omegas[i] * Cvs[i_layer] / kys[i_layer];
@@ -74,6 +72,7 @@ double complex *fB(int i_layer, double lambda, double *kxs, double *kys, double 
 
 double complex *phi(int i_layer, double lambda, double* ds, double* kxs, double* kys, double* Cvs)
 {
+  /* Borca-Tasciuc Eq.(4) */
   double complex *fB__ = fB(i_layer,lambda,kxs,kys,Cvs);
   for (int i = 0; i < n_omegas; i++)
     phi_[i] = ((double complex) ds[i_layer]) * fB__[i];
@@ -84,6 +83,7 @@ double complex *phi(int i_layer, double lambda, double* ds, double* kxs, double*
 
 double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* kys, double* Cvs)
 {
+  /* Borca-Tasciuc Eq.(2) */
   if (i_layer == n_layers - 1) {
     switch (b_type)
     {
@@ -141,6 +141,7 @@ double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* 
 
 double complex *integrand(double lambda, double *ds, double *kxs, double *kys, double *Cvs)
 {
+  /* Borca-Tasciuc Eq.(1) integrand */
   double complex *A_top = fA(0,lambda,ds,kxs,kys,Cvs);
   double complex *B_top = fB(0,lambda,kxs,kys,Cvs);
   double complex sinc_sq_ = sinc_sq(b * lambda);
@@ -152,6 +153,7 @@ double complex *integrand(double lambda, double *ds, double *kxs, double *kys, d
 
 double complex *integral(double *ds, double *kxs, double *kys, double *Cvs)
 {
+  /* Borca-Tasciuc Eq.(1) integral */
   double complex *f0 = integrand(lambdas_[0],ds,kxs,kys,Cvs);
   for (int i = 0; i < n_omegas; i++) {
     integral_result_[i] = 0.0 + I*0.0;
@@ -179,7 +181,7 @@ double complex *integral(double *ds, double *kxs, double *kys, double *Cvs)
 // =================================================================================================
 
 
-static PyObject *to_complex_1darray(double complex *arr, int size)
+static PyObject *as_complex_nparray(double complex *arr, int size)
 {
   const npy_intp dims = size;
   return PyArray_SimpleNewFromData(1, &dims, NPY_COMPLEX128, arr);
@@ -221,7 +223,7 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     Cvs_[j] = PyFloat_AsDouble(Cv);
   }
 
-  return to_complex_1darray(integral(ds_,kxs_,kys_,Cvs_), n_omegas);
+  return as_complex_nparray(integral(ds_,kxs_,kys_,Cvs_), n_omegas);
 }
 
 
@@ -262,7 +264,7 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
     Cvs_[j] = PyFloat_AsDouble(Cv);
   }
 
-  return to_complex_1darray(integrand(lambda,ds_,kxs_,kys_,Cvs_), n_omegas);
+  return as_complex_nparray(integrand(lambda,ds_,kxs_,kys_,Cvs_), n_omegas);
 }
 
 
@@ -317,8 +319,6 @@ static PyModuleDef Integrate_Module = {
 
 
 PyMODINIT_FUNC PyInit_intg(void) {
-  integral_result_ = (double complex *) PyMem_Malloc(MAX_N_OMEGAS * sizeof(double complex));
-  integrand_result_ = (double complex *) PyMem_Malloc(MAX_N_OMEGAS * sizeof(double complex));
   import_array();
   return PyModule_Create(&Integrate_Module);
 }
