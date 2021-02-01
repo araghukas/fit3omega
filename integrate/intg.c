@@ -130,7 +130,7 @@ double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* 
   double complex *phi__ = phi(i_layer,lambda,ds,kxs,kys,Cvs);
 
   for (int i = 0; i < n_omegas; i++)
-    tanh_term_[i] = tanh(phi__[i]);
+    tanh_term_[i] = ctanh(phi__[i]);
 
   for (int i = 0; i < n_omegas; i++) {
     double complex ABkkB = AB_next_[i] * kkB_[i];
