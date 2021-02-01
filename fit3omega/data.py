@@ -6,12 +6,16 @@ from typing import NamedTuple
 class ACReading(NamedTuple):
     x: np.array  # cos voltage
     y: np.array  # sin voltage
-    xerr: np.array  # (stdev x) / x
-    yerr: np.array  # (stdev y) / y
+    xerr: np.array  # (abserr x) / abs x
+    yerr: np.array  # (abserr y) / abs y
 
     def norm(self):
         """pythagorean norm"""
         return np.sqrt(self.x**2 + self.y**2)
+
+    def phi(self):
+        """phase"""
+        return np.arctan(self.y / self.x)
 
     def abserr(self):
         """absolute error of norm"""
@@ -21,9 +25,16 @@ class ACReading(NamedTuple):
         """relative error of norm"""
         return self.abserr() / self.norm()
 
-    def phi(self):
-        """phase"""
-        return np.arctan(self.y / self.x)
+    def abserr_phi(self):
+        """absolute error (in radians) of phase angle"""
+        r = self.y / self.x
+        dr = r * np.sqrt(self.xerr**2 + self.yerr**2)
+        # d[ arctan(r) ] = 1 / (1 + r**2) * dr
+        return dr / (1 + r**2)
+
+    def relerr_phi(self):
+        """relative error of phase angle"""
+        return self.abserr_phi() / self.phi()
 
 
 class Data:

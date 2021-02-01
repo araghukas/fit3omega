@@ -9,6 +9,7 @@ ROOT2 = np.sqrt(2)
 
 class Model:
     """manages sample configuration and measured data"""
+
     def __init__(self, sample, data):
         if type(sample) is str:
             self.sample = Sample(sample)
@@ -30,6 +31,7 @@ class Model:
         self._Ish = None
         self._T2 = None
         self._dT2 = None
+        self._power = None
 
     @property
     def shunt(self) -> Shunt:
@@ -76,6 +78,30 @@ class Model:
             yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + self.Ish.relerr()**2)
             self._T2 = ACReading(x, y, xerr, yerr)
         return self._T2
+
+    @property
+    def power(self) -> ACReading:
+        """
+        Average complex power absorbed by heater line
+
+        Great reference
+            "electrical-engineering-portal.com": tinyurl.com/3yp8c5qt
+        """
+        if self._power is None:
+            A = np.cos(self.V.phi() - self.Ish.phi())
+            B = np.sin(self.V.phi() - self.Ish.phi())
+            phi = self.V.phi() - self.Ish.phi()  # power factor angle
+
+            dphi = np.sqrt(self.V.abserr_phi()**2 + self.Ish.abserr_phi()**2)
+            dA = np.sin(phi) * np.sin(dphi)
+            dB = np.sin(dphi) * np.cos(phi)
+
+            x = self.V.norm() * self.Ish.norm() * A  # actual average dissipated power
+            y = self.V.norm() * self.Ish.norm() * B
+            xerr = np.sqrt(self.V.relerr()**2 + self.Ish.relerr()**2 + (dA / A)**2)
+            yerr = np.sqrt(self.V.relerr()**2 + self.Ish.relerr()**2 + (dB / B)**2)
+            self._power = ACReading(x, y, xerr, yerr)
+        return self._power
 
     def plot_data(self, show=False):
         return plot.plot_data(self, show)
