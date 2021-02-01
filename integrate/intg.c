@@ -297,6 +297,7 @@ static PyObject *Set(PyObject *self, PyObject *args)
   omegas = PyArray_GetPtr(omegas_Py, &start_index); // global
   if (omegas == NULL)
     return NULL;
+  Py_INCREF(omegas_Py);
 
   make_logspace(lambdas_, lambda_i, lambda_f, N_XPTS);
   PARAMS_SET = 1;
