@@ -11,7 +11,7 @@
 
 #define MAX_N_LAYERS 10
 #define MAX_N_OMEGAS 150
-#define N_XPTS   200
+#define N_XPTS       200
 
 
 // SAMPLE PARAMETERS
@@ -20,9 +20,11 @@ double b;
 double lambda_i;
 double lambda_f;
 int n_layers;
-npy_intp n_omegas;
 char b_type;
 
+npy_intp n_omegas; // length of `omegas` array
+
+int PARAMS_SET; // flag == "Python-side `set` method called successfully"
 
 // INTERMEDIATE VALUES
 double complex fB_[MAX_N_OMEGAS];
@@ -197,6 +199,9 @@ THE WRAPPED INTEGRAL FUNCTION
 
 static PyObject *Integral(PyObject *self, PyObject *args)
 {
+  if (!PARAMS_SET)
+    return NULL;
+
   PyObject *Py_ds;
   PyObject *Py_kxs;
   PyObject *Py_kys;
@@ -205,8 +210,7 @@ static PyObject *Integral(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args,"OOOO",&Py_ds,&Py_kxs,&Py_kys,&Py_Cvs))
     return NULL;
 
-  int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > MAX_N_LAYERS)
+  if (PyObject_Length(Py_ds) != n_layers)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -236,6 +240,9 @@ THE WRAPPED INTEGRAND FUNCTION
 
 static PyObject *Integrand(PyObject *self, PyObject *args)
 {
+  if (!PARAMS_SET)
+    return NULL;
+
   double lambda;
   PyObject *Py_ds;
   PyObject *Py_kxs;
@@ -246,8 +253,7 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args,"dOOOO",&lambda,&Py_ds,&Py_kxs,&Py_kys,&Py_Cvs))
     return NULL;
 
-  int n_layers = PyObject_Length(Py_ds);
-  if (n_layers < 0 || n_layers > MAX_N_LAYERS)
+  if ((int) PyObject_Length(Py_ds) != n_layers)
     return NULL;
 
   for (int j = 0; j < n_layers; j++) {
@@ -277,7 +283,10 @@ static PyObject *Set(PyObject *self, PyObject *args)
 {
   PyArrayObject *omegas_Py;
   if (!PyArg_ParseTuple(args,"O!dddic",&PyArray_Type,&omegas_Py,
-                                       &b,&lambda_i,&lambda_f,&n_layers,&b_type))
+                                       &b,&lambda_i,&lambda_f,&n_layers,&b_type)) // globals
+    return NULL;
+
+   if (n_layers <= 0 || n_layers > MAX_N_LAYERS)
     return NULL;
 
   n_omegas = PyArray_Size((PyObject *) omegas_Py);
@@ -285,11 +294,12 @@ static PyObject *Set(PyObject *self, PyObject *args)
     return NULL;
 
   npy_intp start_index = 0;
-  omegas = PyArray_GetPtr(omegas_Py, &start_index);
+  omegas = PyArray_GetPtr(omegas_Py, &start_index); // global
   if (omegas == NULL)
     return NULL;
 
   make_logspace(lambdas_, lambda_i, lambda_f, N_XPTS);
+  PARAMS_SET = 1;
   Py_RETURN_NONE;
 }
 
@@ -320,5 +330,6 @@ static PyModuleDef Integrate_Module = {
 
 PyMODINIT_FUNC PyInit_intg(void) {
   import_array();
+  PARAMS_SET = 0;
   return PyModule_Create(&Integrate_Module);
 }
