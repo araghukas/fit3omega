@@ -77,7 +77,7 @@ double complex *phi(int i_layer, double lambda, double* ds, double* kxs, double*
   /* Borca-Tasciuc Eq.(4) */
   double complex *fB__ = fB(i_layer,lambda,kxs,kys,Cvs);
   for (int i = 0; i < n_omegas; i++)
-    phi_[i] = ((double complex) ds[i_layer]) * fB__[i];
+    phi_[i] = ds[i_layer] * fB__[i];
 
   return phi_;
 }
@@ -97,14 +97,14 @@ double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* 
       {
         double complex *phi__ = phi(i_layer,lambda,ds,kxs,kys,Cvs);
         for (int i = 0; i < n_omegas; i++)
-          fA_[i] = (-1.0 + I*0.0) * ctanh(phi__[i]);
+          fA_[i] = -1.0 * ctanh(phi__[i]);
         break;
       }
       case 'i':
       {
         double complex *phi__ = phi(i_layer,lambda,ds,kxs,kys,Cvs);
         for (int i = 0; i < n_omegas; i++)
-          fA_[i] = (-1.0 + I*0.0) / ctanh(phi__[i]);
+          fA_[i] = -1.0 / ctanh(phi__[i]);
         break;
       }
       default:
@@ -118,14 +118,14 @@ double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* 
   double complex *B_next = fB(i_layer+1,lambda,kxs,kys,Cvs);
 
   for (int i = 0; i < n_omegas; i++)
-    AB_next_[i] = A_next[i] + B_next[i];
+    AB_next_[i] = A_next[i] * B_next[i];
 
   double complex *B_i = fB(i_layer,lambda,kxs,kys,Cvs);
   double k_i = kys[i_layer];
   double k_next = kys[i_layer+1];
 
   for (int i = 0; i < n_omegas; i++)
-    kkB_[i] = (k_next / (k_i * B_i[i]) + I*0.0);
+    kkB_[i] = k_next / (k_i * B_i[i]);
 
   double complex *phi__ = phi(i_layer,lambda,ds,kxs,kys,Cvs);
 
@@ -135,7 +135,7 @@ double complex *fA(int i_layer, double lambda, double* ds, double* kxs, double* 
   for (int i = 0; i < n_omegas; i++) {
     double complex ABkkB = AB_next_[i] * kkB_[i];
     double complex tanh_term = tanh_term_[i];
-    fA_[i] = (ABkkB - tanh_term) / ((1.0 + I*0.0) - ABkkB * tanh_term);
+    fA_[i] = (ABkkB - tanh_term) / (1.0 - ABkkB * tanh_term);
   }
   return fA_;
 }
