@@ -36,6 +36,10 @@ class ACReading(NamedTuple):
         """relative error of phase angle"""
         return self.abserr_phi() / self.phi()
 
+    def phasor(self):
+        """complex vector x + jy"""
+        return self.x + 1j * self.y
+
 
 class Data:
     CSV_COLS = {

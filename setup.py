@@ -15,6 +15,6 @@ setup(
     license="MIT License",
     packages=find_packages(),
     package_data={"fit3omega": ["integrate/*"]},
-    install_requires=['pyyaml', 'pandas', 'numpy', 'matplotlib'],
+    install_requires=['pyyaml', 'pandas', 'numpy', 'matplotlib', 'scipy'],
     ext_modules=[C_module]
 )
