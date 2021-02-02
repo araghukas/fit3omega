@@ -1,6 +1,8 @@
 import os
 import yaml
 
+from .model import Model
+
 
 class CLI:
     HEADER = (
@@ -154,8 +156,8 @@ class CLI:
                     t = self.TYPES[k1][k2]
                     d[k2] = t(x)
                 except ValueError:
-                    if x == "fit" and self.CAN_FIT[k1][k2]:
-                        d[k2] = "fit"
+                    if x == Model.FIT_MARKER and self.CAN_FIT[k1][k2]:
+                        d[k2] = Model.FIT_MARKER
                         continue
 
                     with open(self.INCOMPLETE, 'w') as f:
@@ -181,8 +183,8 @@ class CLI:
                     if v2 is None:
                         del v2
 
-            if x == "fit" and self.CAN_FIT[k1][k2]:
-                self.data[k1][k2] = "fit"
+            if x == Model.FIT_MARKER and self.CAN_FIT[k1][k2]:
+                self.data[k1][k2] = Model.FIT_MARKER
                 return
 
             with open(self.INCOMPLETE, 'w') as f:

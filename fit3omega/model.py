@@ -9,6 +9,7 @@ ROOT2 = np.sqrt(2)
 
 class Model:
     """manages sample configuration and measured data"""
+    FIT_MARKER = "fit"
 
     def __init__(self, sample, data):
         if type(sample) is str:
