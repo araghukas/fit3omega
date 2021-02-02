@@ -33,8 +33,9 @@ class CLI:
         "layers": {
             "name": "name",
             "height": "height [m]",
+            "kx": "in-plane thermal conductivity [W/m/K]",
+            "ky": "cross-plane thermal conductivity [w/m/K]",
             "Cv": "heat capacity [J/m^3/K]",
-            "ratio_xy": "conductivity ratio (k_x/k_y)"
         },
     }
 
@@ -52,18 +53,39 @@ class CLI:
         "layers": {
             "name": str,
             "height": float,
-            "Cv": float,
-            "ratio_xy": float,
+            "kx": float,
+            "ky": float,
+            "Cv": float
         },
+    }
+
+    CAN_FIT = {
+        "shunt": {
+            "R": False,
+            "err": False,
+        },
+        "heater": {
+            "length": False,
+            "width": False,
+            "dRdT": False,
+            "dRdT_err": False
+        },
+        "layers": {
+            "name": False,
+            "height": True,
+            "kx": True,
+            "ky": True,
+            "Cv": True
+        }
     }
 
     MULTIPLES = ["layers"]
 
-    Q_LINE_BLANK = "\t   --> {:>33}: "
+    Q_LINE_BLANK = "\t   --> {:>40}: "
     T_LINE_BLANK = "\t:: {}: "
 
     QQ_LINE_BLANK = "\t" + Q_LINE_BLANK
-    TT_LINE_BLANK = "\t\t:: [{}] #{:d}: "
+    TT_LINE_BLANK = "\t    :: [{}] #{:d}: "
 
     INCOMPLETE = "_incomplete.f3oc"
     BLANK = "blank.f3oc"
@@ -132,6 +154,10 @@ class CLI:
                     t = self.TYPES[k1][k2]
                     d[k2] = t(x)
                 except ValueError:
+                    if x == "fit" and self.CAN_FIT[k1][k2]:
+                        d[k2] = "fit"
+                        continue
+
                     with open(self.INCOMPLETE, 'w') as f:
                         yaml.safe_dump(self.data, f, sort_keys=False)
                     print("==> fit3omega: dumped incomplete config...")
@@ -149,12 +175,15 @@ class CLI:
             t = self.TYPES[k1][k2]
             self.data[k1][k2] = t(x)
         except ValueError:
-
             # delete null entries
             for k1, v1 in self.data.items():
                 for k2, v2 in v1.items():
                     if v2 is None:
                         del v2
+
+            if x == "fit" and self.CAN_FIT[k1][k2]:
+                self.data[k1][k2] = "fit"
+                return
 
             with open(self.INCOMPLETE, 'w') as f:
                 yaml.safe_dump(self.data, f, sort_keys=False)
@@ -162,22 +191,19 @@ class CLI:
             exit(1)
 
 
-def _write_blank_config(path_):
-    if os.path.isdir(path_):
-        data = {}
-        for k, v in CLI.PROMPTS.items():
-            data[k] = {k_: None for k_ in v}
+def _write_blank_config():
+    data = {}
+    for k, v in CLI.PROMPTS.items():
+        data[k] = {k_: None for k_ in v}
 
-        for k in CLI.MULTIPLES:
-            keys = data[k].keys()
-            data[k] = {"1": {k: None for k in keys}}
+    for k in CLI.MULTIPLES:
+        keys = data[k].keys()
+        data[k] = {"1": {k: None for k in keys}}
 
-        file_ = os.path.join(path_, CLI.BLANK)
-        with open(file_, 'w') as f:
-            yaml.safe_dump(data, f, sort_keys=False)
-        print("wrote file: %s" % file_)
-    else:
-        raise NotADirectoryError("'%s'" % path_)
+    file_ = os.path.join(os.getcwd(), CLI.BLANK)
+    with open(file_, 'w') as f:
+        yaml.safe_dump(data, f, sort_keys=False)
+    print("wrote file: %s" % file_)
     exit(0)
 
 
@@ -226,17 +252,13 @@ if __name__ == "__main__":
     parser.add_argument("-plot_data",
                         help="plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
-    parser.add_argument("-d",
-                        help="directory that config file is written to",
-                        default=None)
 
     args = parser.parse_args()
 
-    d_ = os.path.expanduser(args.d) if args.d else os.getcwd()
     if args.new:
         _launch_cli()
     elif args.blank:
-        _write_blank_config(d_)
+        _write_blank_config()
     elif args.plot_data:
         _plot_data(*args.plot_data, show=args.show_plot)
     else:
