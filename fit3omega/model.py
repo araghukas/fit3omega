@@ -73,8 +73,8 @@ class Model:
     def T2(self) -> ACReading:
         """Temperature wave component at twice driving frequency"""
         if self._T2 is None:
-            x = ROOT2 * self.V3.x / self.heater.dRdT / self.Ish.norm()
-            y = -ROOT2 * self.V3.y / self.heater.dRdT / self.Ish.norm()
+            x = ROOT2 * np.abs(self.V3.x) / self.heater.dRdT / self.Ish.norm()
+            y = -ROOT2 * np.abs(self.V3.y) / self.heater.dRdT / self.Ish.norm()
             xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + self.Ish.relerr()**2)
             yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + self.Ish.relerr()**2)
             self._T2 = ACReading(x, y, xerr, yerr)
