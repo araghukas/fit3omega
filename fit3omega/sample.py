@@ -38,6 +38,14 @@ class Sample:
         return [layer.height for layer in self.layers]
 
     @property
+    def kxs(self):
+        return [layer.kx for layer in self.layers]
+
+    @property
+    def kys(self):
+        return [layer.ky for layer in self.layers]
+
+    @property
     def Cvs(self):
         return [layer.Cv for layer in self.layers]
 
@@ -59,5 +67,6 @@ class Heater(NamedTuple):
 class Layer(NamedTuple):
     name: str
     height: float
+    kx: float
+    ky: float
     Cv: float  # heat capacity [J/m^3/K]
-    ratio_xy: float  # thermal conductivity anisotropy ratio_xy = k_x / k_y
