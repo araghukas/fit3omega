@@ -34,7 +34,7 @@ class Sample:
                 raise ValueError("unrecognized configuration key '%s'" % k)
 
     @property
-    def ds(self):
+    def heights(self):
         return [layer.height for layer in self.layers]
 
     @property
