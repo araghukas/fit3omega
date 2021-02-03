@@ -61,6 +61,7 @@ class FitGeneral(Model):
 
         # C-extension integrator module
         self.intg = __import__('intg')
+        self.vertex_shift = -0.4  # shifts parabolic omega weights left by 40% on log scale
 
     @property
     def result(self):
@@ -83,7 +84,12 @@ class FitGeneral(Model):
     @property
     def bias(self):
         if self._bias is None:
-            self._bias = self.omegas / np.max(self.omegas)
+            # concave-up parabolic omega weights favouring endpoints
+            u = np.log(self.omegas)
+            u_ave = np.average(u)
+            u_ave *= np.exp(self.vertex_shift)
+            b = (u - u_ave)**2
+            self._bias = b / np.max(b)
         return self._bias
 
     def T2_func(self, heights, kxs, kys, Cvs) -> np.ndarray:
@@ -110,9 +116,9 @@ class FitGeneral(Model):
         T2_func_ = self.T2_func(*args_T2)
 
         err = np.dot(np.abs(self.T2.phasor() - T2_func_), self.bias)
-        return err / len(T2_func_)
+        return err
 
-    def fit(self, method: str = None, **kwargs):
+    def fit(self, method: str = None, niter=10, **kwargs):
         if method is None:
             method = "fraction"
             kwargs = dict(frac=0.1)
@@ -122,7 +128,7 @@ class FitGeneral(Model):
         """MAIN FIT FUNCTION"""
         stepper, bound_func = FitGeneral.METHODS[method]
         kwargs["guesses"] = self._guesses
-        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=10,
+        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
                                   minimizer_kwargs={
                                       'method': 'L-BFGS-B',
                                       'bounds': bound_func(**kwargs)
@@ -179,7 +185,7 @@ if __name__ == "__main__":
     g.data.drop_row(42)
     g.data.drop_row(48)
 
-    g.fit("fraction", frac=1.0)
+    g.fit("fraction", niter=1, frac=2.0)
     for k1, v1 in g.result.items():
         print(k1, v1)
     print(g.error)
