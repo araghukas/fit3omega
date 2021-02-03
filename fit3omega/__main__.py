@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from .model import Model
+from fit3omega.model import Model
 
 
 class CLI:
@@ -11,14 +11,15 @@ class CLI:
             "=================================\n"
             "%s\n"
             "\n"
-            "Enter sample parameters."
+            "Enter sample parameters.\n"
             % os.getcwd()
     )
 
     SECTION_TITLES = {
         "shunt": "Shunt Resistor",
         "heater": "Heater/Transducer",
-        "layers": "Layer Configuration (top to bottom)"
+        "layers": ("Layer Configuration (top to bottom)\n"
+                   "\t   Enter a guess for unknown values followed by '*' to fit")
     }
 
     PROMPTS = {
@@ -156,13 +157,17 @@ class CLI:
                     t = self.TYPES[k1][k2]
                     d[k2] = t(x)
                 except ValueError:
-                    if x == Model.FIT_MARKER and self.CAN_FIT[k1][k2]:
-                        d[k2] = Model.FIT_MARKER
-                        continue
+                    if self.CAN_FIT[k1][k2] and x.endswith('*'):
+                        try:
+                            d[k2] = self.TYPES[k1][k2](x.rstrip('*'))
+                            d[k2] = str(d[k2]) + '*'
+                            continue
+                        except ValueError:
+                            pass
 
                     with open(self.INCOMPLETE, 'w') as f:
                         yaml.safe_dump(self.data, f, sort_keys=False)
-                    print("==> fit3omega: dumped incomplete config...")
+                    print("==> fit3omega: input error '%s'; dumped incomplete config..." % x)
                     exit(1)
             self.data[k1][str(i + 1)] = d
 
@@ -183,9 +188,13 @@ class CLI:
                     if v2 is None:
                         del v2
 
-            if x == Model.FIT_MARKER and self.CAN_FIT[k1][k2]:
-                self.data[k1][k2] = Model.FIT_MARKER
-                return
+            if self.CAN_FIT[k1][k2] and x.endswith('*'):
+                try:
+                    d[k2] = self.TYPES[k1][k2](x.rstrip('*'))
+                    d[k2] = str(d[k2]) + '*'
+                    return
+                except ValueError:
+                    pass
 
             with open(self.INCOMPLETE, 'w') as f:
                 yaml.safe_dump(self.data, f, sort_keys=False)
