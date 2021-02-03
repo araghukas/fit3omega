@@ -109,10 +109,7 @@ class FitGeneral(Model):
 
         T2_func_ = self.T2_func(*args_T2)
 
-        # err = sum(np.abs(T2_func_.real - self.T2.x)**2)
-        # err += sum(np.abs(T2_func_.imag - self.T2.y)**2)
-
-        err = sum(np.abs((self.T2.phasor() - T2_func_) * self.bias))
+        err = np.dot(np.abs(self.T2.phasor() - T2_func_), self.bias)
         return err / len(T2_func_)
 
     def fit(self, method: str = None, **kwargs):
@@ -125,7 +122,7 @@ class FitGeneral(Model):
         """MAIN FIT FUNCTION"""
         stepper, bound_func = FitGeneral.METHODS[method]
         kwargs["guesses"] = self._guesses
-        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=1,
+        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=10,
                                   minimizer_kwargs={
                                       'method': 'L-BFGS-B',
                                       'bounds': bound_func(**kwargs)
@@ -135,8 +132,8 @@ class FitGeneral(Model):
 
     def plot(self):
         """plot fit result"""
-        result = self.result
-        T2_func_ = self.T2_func(**self.result)
+        # result = self.result
+        # T2_func_ = self.T2_func(**self.result)
         raise NotImplementedError
 
     def _identify_fit_index(self, index) -> str:
@@ -182,8 +179,9 @@ if __name__ == "__main__":
     g.data.drop_row(42)
     g.data.drop_row(48)
 
-    g.fit("fraction", frac=.5)
-    print(g.result)
+    g.fit("fraction", frac=1.0)
+    for k1, v1 in g.result.items():
+        print(k1, v1)
     print(g.error)
 
     Xm = g.T2.x
