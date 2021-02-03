@@ -80,6 +80,9 @@ class Data:
         self._Vsh = None
 
     def set_limits(self, start: int, end: int):
+        self._V = None
+        self._V3 = None
+        self._Vsh = None
         self._start = int(start)
         self._end = int(end)
 

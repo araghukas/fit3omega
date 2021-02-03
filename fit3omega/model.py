@@ -24,9 +24,6 @@ class Model:
         else:
             raise ValueError("invalid `data` type; need str or fit3omega.data.Data")
 
-        self._V = None
-        self._V3 = None
-        self._Vsh = None
         self._Ish = None
         self._T2 = None
         self._dT2 = None
@@ -96,6 +93,13 @@ class Model:
             yerr = np.sqrt(self.V.relerr()**2 + self.Ish.relerr()**2 + (dB / B)**2)
             self._power = ACReading(x, y, xerr, yerr)
         return self._power
+
+    def set_data_limits(self, start, end):
+        self.data.set_limits(start, end)
+        self._Ish = None
+        self._T2 = None
+        self._dT2 = None
+        self._power = None
 
     def plot_data(self, show=False):
         return plot.plot_data(self, show)

@@ -94,6 +94,15 @@ class FitGeneral(Model):
             self._bias = 1 + b / np.max(b)
         return self._bias
 
+    @bias.setter
+    def bias(self, s: str):
+        if s == "on":
+            self._bias = None
+        elif s == "off":
+            self._bias = np.ones(self.T2.x.shape)
+        else:
+            raise ValueError("argument other than 'on' or 'off'")
+
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
         """T2 prediction from physical model and provided properties"""
         if not self._intg_set:
@@ -146,6 +155,10 @@ class FitGeneral(Model):
         # T2_func_ = self.T2_func(**self.result)
         raise NotImplementedError
 
+    def set_data_limits(self, start, end):
+        super().set_data_limits(start, end)
+        self._bias = np.ones(self.T2.x.shape)
+
     def _identify_fit_index(self, index) -> str:
         prop_names = ["height", "ky", "ratio_xy", "Cv"]
         i_prop = index // len(self.defaults[0])
@@ -186,9 +199,10 @@ if __name__ == "__main__":
     sample_ = "../sample/2232_2.f3oc"
     data_ = "../sample/tc3omega_data_3.0_V.csv"
     g = FitGeneral(sample_, data_, 'i')
+    g.bias = "off"
     # g.data.drop_row(42)
     # g.data.drop_row(48)
-    g.data.set_limits(0, 40)
+    g.set_data_limits(0, 40)
     g.vertex_shift = -0.4
     g.fit("fraction", niter=10, frac=1.0)
     for k1, v1 in g.result.items():
