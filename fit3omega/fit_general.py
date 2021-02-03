@@ -91,7 +91,7 @@ class FitGeneral(Model):
             u_ave = np.average(u)
             u_ave *= np.exp(self.vertex_shift)
             b = (u - u_ave)**2
-            self._bias = b / np.max(b)
+            self._bias = 1 + b / np.max(b)
         return self._bias
 
     def T2_func(self, heights, kxs, kys, Cvs) -> np.ndarray:
@@ -191,8 +191,8 @@ if __name__ == "__main__":
     g = FitGeneral(sample_, data_, 'i')
     g.data.drop_row(42)
     g.data.drop_row(48)
-    g.vertex_shift = 0.4
-    g.fit("fraction", niter=10, frac=.5)
+    g.vertex_shift = -0.4
+    g.fit("fraction", niter=100, frac=1.0)
     for k1, v1 in g.result.items():
         print(k1, v1)
     print(g.error)
