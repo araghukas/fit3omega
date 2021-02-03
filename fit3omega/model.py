@@ -80,7 +80,7 @@ class Model:
 
     @property
     def power(self) -> ACReading:
-        """complex power"""
+        """complex power (IEEE Std 1459-2010)"""
         if self._power is None:
             phi = self.V.phi() - self.Ish.phi()  # power factor angle
             A = np.cos(phi)

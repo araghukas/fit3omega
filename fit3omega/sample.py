@@ -28,22 +28,26 @@ class Sample:
             elif k == "heater":
                 self.heater = Heater(**v)
             elif k == "layers":
-                for k2, layer_dict in v.items():
-                    self.layers.append(Layer(**layer_dict))
+                for _, layer_dict in v.items():
+                    try:
+                        self.layers.append(Layer(**layer_dict))
+                    except TypeError as te:
+                        raise ValueError("unknown sample property '%s'"
+                                         % str(te).split(' ')[-1].strip("'"))
             else:
-                raise ValueError("unrecognized configuration key '%s'" % k)
+                raise ValueError("unknown configuration key '%s'" % k)
 
     @property
     def heights(self):
         return [layer.height for layer in self.layers]
 
     @property
-    def kxs(self):
-        return [layer.kx for layer in self.layers]
-
-    @property
     def kys(self):
         return [layer.ky for layer in self.layers]
+
+    @property
+    def ratio_xys(self):
+        return [layer.ratio_xy for layer in self.layers]
 
     @property
     def Cvs(self):
@@ -67,6 +71,6 @@ class Heater(NamedTuple):
 class Layer(NamedTuple):
     name: str
     height: float
-    kx: float
     ky: float
+    ratio_xy: float
     Cv: float  # heat capacity [J/m^3/K]

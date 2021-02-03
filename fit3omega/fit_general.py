@@ -41,7 +41,7 @@ class FitGeneral(Model):
         self._fit_indices = []
         self._guesses = []
         self._bias = None
-        self._defaults = (self.sample.heights, self.sample.kxs, self.sample.kys, self.sample.Cvs)
+        self._defaults = (self.sample.heights, self.sample.kys, self.sample.ratio_xys, self.sample.Cvs)
 
         if b_type not in FitGeneral.BOUNDARY_TYPES:
             raise ValueError("boundary type {} is not one of {}"
@@ -94,12 +94,13 @@ class FitGeneral(Model):
             self._bias = 1 + b / np.max(b)
         return self._bias
 
-    def T2_func(self, heights, kxs, kys, Cvs) -> np.ndarray:
+    def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
         """T2 prediction from physical model and provided properties"""
         if not self._intg_set:
             self._set_intg()
 
         P = -1 / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x  # scaled average power
+        kxs = [r * ky for r, ky in zip(ratio_xys, kys)]
         return P * self.intg.integral(heights, kxs, kys, Cvs)  # average temperature rise
 
     def T2_err_func(self, args) -> float:
@@ -146,7 +147,7 @@ class FitGeneral(Model):
         raise NotImplementedError
 
     def _identify_fit_index(self, index) -> str:
-        prop_names = ["height", "kx", "ky", "Cv"]
+        prop_names = ["height", "ky", "ratio_xy", "Cv"]
         i_prop = index // len(self.defaults[0])
         i_name = index - i_prop * len(self.defaults[0])
         name = self.sample.layers[i_name].name
@@ -157,8 +158,8 @@ class FitGeneral(Model):
         fitted_argv = fit_result.x
         result = [
             ("heights", self.sample.heights.copy()),
-            ("kxs", self.sample.kxs.copy()),
             ("kys", self.sample.kys.copy()),
+            ("ratio_xys", self.sample.ratio_xys.copy()),
             ("Cvs", self.sample.Cvs.copy())
         ]
         for i, index in enumerate(self._fit_indices):
@@ -180,19 +181,16 @@ class FitGeneral(Model):
 
 
 if __name__ == "__main__":
-    # TODO: that root2 business... missing/extra factor in power calculation??
-    # TODO: compare T2 prediction to tc3omega
-    # TODO: go back to using ratio_xy parameter, easier for fix isotropy
-
     import matplotlib.pyplot as plt
 
     sample_ = "../sample/2232_2.f3oc"
     data_ = "../sample/tc3omega_data_3.0_V.csv"
     g = FitGeneral(sample_, data_, 'i')
-    g.data.drop_row(42)
-    g.data.drop_row(48)
+    # g.data.drop_row(42)
+    # g.data.drop_row(48)
+    g.data.set_limits(0, 40)
     g.vertex_shift = -0.4
-    g.fit("fraction", niter=100, frac=1.0)
+    g.fit("fraction", niter=10, frac=1.0)
     for k1, v1 in g.result.items():
         print(k1, v1)
     print(g.error)

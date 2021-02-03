@@ -36,8 +36,8 @@ class CLI:
         "layers": {
             "name": "name",
             "height": "height [m]",
-            "kx": "in-plane thermal conductivity [W/m/K]",
             "ky": "cross-plane thermal conductivity [w/m/K]",
+            "ratio_xy": "in/cross thermal conductivity ratio",
             "Cv": "heat capacity [J/m^3/K]",
         },
     }
@@ -56,8 +56,8 @@ class CLI:
         "layers": {
             "name": str,
             "height": float,
-            "kx": float,
             "ky": float,
+            "ratio_xy": float,
             "Cv": float
         },
     }
@@ -76,8 +76,8 @@ class CLI:
         "layers": {
             "name": False,
             "height": True,
-            "kx": True,
             "ky": True,
+            "ratio_xy": True,
             "Cv": True
         }
     }
@@ -190,8 +190,8 @@ class CLI:
 
             if self.CAN_FIT[k1][k2] and x.endswith('*'):
                 try:
-                    d[k2] = self.TYPES[k1][k2](x.rstrip('*'))
-                    d[k2] = str(d[k2]) + '*'
+                    self.data[k1][k2] = self.TYPES[k1][k2](x.rstrip('*'))
+                    self.data[k1][k2] = str(self.data[k1][k2]) + '*'
                     return
                 except ValueError:
                     pass
