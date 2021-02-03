@@ -10,7 +10,6 @@ class Stepper:
 
     def __call__(self, x):
         for i, s in enumerate(self.step_sizes):
-            print(x)
             x[i] += np.random.uniform(-s, s)
         return x
 
@@ -39,6 +38,7 @@ class FitGeneral(Model):
         self._full_args = None
         self._fit_indices = []
         self._guesses = []
+        self._bias = None
         self._defaults = (self.sample.heights, self.sample.kxs, self.sample.kys, self.sample.Cvs)
 
         if b_type not in FitGeneral.BOUNDARY_TYPES:
@@ -80,6 +80,12 @@ class FitGeneral(Model):
     def defaults(self):
         return self._defaults
 
+    @property
+    def bias(self):
+        if self._bias is None:
+            self._bias = self.omegas / np.max(self.omegas)
+        return self._bias
+
     def T2_func(self, heights, kxs, kys, Cvs) -> np.ndarray:
         """T2 prediction from physical model and provided properties"""
         if not self._intg_set:
@@ -87,6 +93,27 @@ class FitGeneral(Model):
 
         P = -1 / (np.pi * self.heater.length * kys[0]) * self.power.phasor()
         return P * self.intg.integral(heights, kxs, kys, Cvs)
+
+    def T2_err_func(self, args) -> float:
+        """objective function for the fit method"""
+        err_args = self._full_args.copy()
+        for j, index in enumerate(self._fit_indices):
+            err_args[index] = args[j]
+
+        # reconstruct T2_func args
+        args_T2 = tuple()
+        for k in range(len(self._full_args) // self.n_layers):
+            i_min = k * self.n_layers
+            i_max = i_min + self.n_layers
+            args_T2 += (err_args[i_min:i_max],)
+
+        T2_func_ = self.T2_func(*args_T2)
+
+        # err = sum(np.abs(T2_func_.real - self.T2.x)**2)
+        # err += sum(np.abs(T2_func_.imag - self.T2.y)**2)
+
+        err = sum(np.abs((self.T2.phasor() - T2_func_) * self.bias))
+        return err / len(T2_func_)
 
     def fit(self, method: str = None, **kwargs):
         if method is None:
@@ -98,7 +125,7 @@ class FitGeneral(Model):
         """MAIN FIT FUNCTION"""
         stepper, bound_func = FitGeneral.METHODS[method]
         kwargs["guesses"] = self._guesses
-        fit_result = basinhopping(self._err_func, self._guesses, niter=100,
+        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=1,
                                   minimizer_kwargs={
                                       'method': 'L-BFGS-B',
                                       'bounds': bound_func(**kwargs)
@@ -135,26 +162,6 @@ class FitGeneral(Model):
 
         self._result = {r[0]: r[1] for r in result}
         self._error = fit_result.fun
-
-    def _err_func(self, args) -> float:
-        """objective function for the fit method"""
-        err_args = self._full_args.copy()
-        for j, index in enumerate(self._fit_indices):
-            err_args[index] = args[j]
-
-        # reconstruct T2_func args
-        args_T2 = tuple()
-        for k in range(len(self._full_args) // self.n_layers):
-            i_min = k * self.n_layers
-            i_max = i_min + self.n_layers
-            args_T2 += (err_args[i_min:i_max],)
-
-        T2_func_ = self.T2_func(*args_T2)
-
-        err = sum(np.abs(T2_func_.real - self.T2.x)**2)
-        err += sum(np.abs(T2_func_.imag - self.T2.y)**2)
-
-        return err / len(T2_func_)
 
     def _set_intg(self):
         self.intg.set(self.omegas,
