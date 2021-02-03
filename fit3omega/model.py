@@ -80,13 +80,11 @@ class Model:
 
     @property
     def power(self) -> ACReading:
-        """
-        Average complex power absorbed by heater line
-        """
+        """complex power"""
         if self._power is None:
-            A = np.cos(self.V.phi() - self.Ish.phi())
-            B = np.sin(self.V.phi() - self.Ish.phi())
             phi = self.V.phi() - self.Ish.phi()  # power factor angle
+            A = np.cos(phi)
+            B = np.sin(phi)
 
             dphi = np.sqrt(self.V.abserr_phi()**2 + self.Ish.abserr_phi()**2)
             dA = np.sin(phi) * np.sin(dphi)

@@ -3,6 +3,8 @@ from scipy.optimize import basinhopping
 
 from fit3omega.model import Model
 
+ROOT2 = np.sqrt(2)
+
 
 class Stepper:
     def __init__(self, step_sizes):
@@ -97,8 +99,8 @@ class FitGeneral(Model):
         if not self._intg_set:
             self._set_intg()
 
-        P = -1 / (np.pi * self.heater.length * kys[0]) * self.power.phasor()
-        return P * self.intg.integral(heights, kxs, kys, Cvs)
+        P = -1 / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x  # scaled average power
+        return P * self.intg.integral(heights, kxs, kys, Cvs)  # average temperature rise
 
     def T2_err_func(self, args) -> float:
         """objective function for the fit method"""
@@ -133,7 +135,8 @@ class FitGeneral(Model):
                                       'method': 'L-BFGS-B',
                                       'bounds': bound_func(**kwargs)
                                   },
-                                  take_step=stepper(**kwargs))
+                                  take_step=stepper(**kwargs),
+                                  callback=lambda x, f, a: print(f) if a else print("x"))
         self._record_result(fit_result)
 
     def plot(self):
@@ -177,6 +180,10 @@ class FitGeneral(Model):
 
 
 if __name__ == "__main__":
+    # TODO: that root2 business... missing/extra factor in power calculation??
+    # TODO: compare T2 prediction to tc3omega
+    # TODO: go back to using ratio_xy parameter, easier for fix isotropy
+
     import matplotlib.pyplot as plt
 
     sample_ = "../sample/2232_2.f3oc"
@@ -184,8 +191,8 @@ if __name__ == "__main__":
     g = FitGeneral(sample_, data_, 'i')
     g.data.drop_row(42)
     g.data.drop_row(48)
-
-    g.fit("fraction", niter=1, frac=2.0)
+    g.vertex_shift = 0.4
+    g.fit("fraction", niter=10, frac=.5)
     for k1, v1 in g.result.items():
         print(k1, v1)
     print(g.error)
@@ -200,12 +207,12 @@ if __name__ == "__main__":
     Rf = np.abs(Tf)
 
     fig, ax = plt.subplots()
-    ax.plot(g.omegas, Xm, marker='o', markersize=5, markerfacecolor='white', color="red",
-            linewidth=0)
-    ax.plot(g.omegas, Ym, marker='o', markersize=5, markerfacecolor='white', color="blue",
-            linewidth=0)
-    ax.plot(g.omegas, Rm, marker='o', markersize=5, color="black",
-            linewidth=0)
+    ax.errorbar(g.omegas, Xm, g.T2.xerr * Xm, marker='o', markersize=5, markerfacecolor='white',
+                color="red", capsize=4, linewidth=0, elinewidth=1)
+    ax.errorbar(g.omegas, Ym, g.T2.yerr * Ym, marker='o', markersize=5, markerfacecolor='white',
+                color="blue", capsize=4, linewidth=0, elinewidth=1)
+    ax.errorbar(g.omegas, Rm, g.T2.relerr() * Ym, marker='o', markersize=5, color="black",
+                capsize=4, linewidth=0, elinewidth=1)
 
     ax.plot(g.omegas, Xf, color="red", linestyle=':')
     ax.plot(g.omegas, Yf, color="blue", linestyle=':')
