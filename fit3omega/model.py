@@ -69,7 +69,7 @@ class Model:
 
     @property
     def T2(self) -> ACReading:
-        """Temperature wave component at twice driving frequency"""
+        """RMS amplitude of temperature oscillations at double-frequency"""
         if self._T2 is None:
             x = ROOT2 * np.abs(self.V3.x) / self.heater.dRdT / self.Ish.norm()
             y = -ROOT2 * np.abs(self.V3.y) / self.heater.dRdT / self.Ish.norm()
@@ -82,9 +82,6 @@ class Model:
     def power(self) -> ACReading:
         """
         Average complex power absorbed by heater line
-
-        Great reference
-            "electrical-engineering-portal.com": tinyurl.com/3yp8c5qt
         """
         if self._power is None:
             A = np.cos(self.V.phi() - self.Ish.phi())
