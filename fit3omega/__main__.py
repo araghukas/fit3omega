@@ -1,8 +1,6 @@
 import os
 import yaml
 
-from fit3omega.model import Model
-
 
 class CLI:
     HEADER = (
@@ -243,7 +241,23 @@ def _plot_data(sample, data, show=True):
     fig = m.plot_data(show=show)
     save_name = os.path.abspath(data).strip(".csv") + "_plot.pdf"
     fig.savefig(save_name)
-    print("==> fit3omega: saved plot as '%s'" % save_name)
+    print("==> fit3omega: saved plot as %s" % save_name)
+    exit(0)
+
+
+def _fit_data(sample, data, show=True):
+    from .fit_general import FitGeneral
+    fg = FitGeneral(sample, data, 'i')
+    fg.fit()
+
+    print()
+    print(fg.result)
+    print()
+
+    fig = fg.plot_fit(show=show)
+    save_name = os.path.abspath(data).rstrip(".csv") + "_fit.pdf"
+    fig.savefig(save_name)
+    print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -260,8 +274,13 @@ if __name__ == "__main__":
     parser.add_argument("--show_plot",
                         help="toggle showing plot window after plotting",
                         action="store_true", default=False)
+
     parser.add_argument("-plot_data",
                         help="plot 3omega voltage data from sample config and data csv",
+                        nargs=2, type=str, default=None)
+
+    parser.add_argument("-fit_data",
+                        help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
     args = parser.parse_args()
@@ -272,6 +291,8 @@ if __name__ == "__main__":
         _write_blank_config()
     elif args.plot_data:
         _plot_data(*args.plot_data, show=args.show_plot)
+    elif args.fit_data:
+        _fit_data(*args.fit_data, show=args.show_plot)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)
