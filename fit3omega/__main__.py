@@ -271,7 +271,7 @@ if __name__ == "__main__":
     parser.add_argument("--new",
                         help="start CLI to create a new config file",
                         action="store_true", default=False)
-    parser.add_argument("--show_plot",
+    parser.add_argument("--show",
                         help="toggle showing plot window after plotting",
                         action="store_true", default=False)
 
@@ -290,9 +290,9 @@ if __name__ == "__main__":
     elif args.blank:
         _write_blank_config()
     elif args.plot_data:
-        _plot_data(*args.plot_data, show=args.show_plot)
+        _plot_data(*args.plot_data, show=args.show)
     elif args.fit_data:
-        _fit_data(*args.fit_data, show=args.show_plot)
+        _fit_data(*args.fit_data, show=args.show)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)
