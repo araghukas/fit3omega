@@ -203,11 +203,11 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     return NULL;
 
   PyObject *Py_ds;
-  PyObject *Py_kxs;
   PyObject *Py_kys;
+  PyObject *Py_ratio_xys;
   PyObject *Py_Cvs;
 
-  if (!PyArg_ParseTuple(args,"OOOO",&Py_ds,&Py_kxs,&Py_kys,&Py_Cvs))
+  if (!PyArg_ParseTuple(args,"OOOO",&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs))
     return NULL;
 
   if (PyObject_Length(Py_ds) != n_layers)
@@ -217,11 +217,11 @@ static PyObject *Integral(PyObject *self, PyObject *args)
     PyObject *d = PyList_GetItem(Py_ds, j);
     ds_[j] = PyFloat_AsDouble(d);
 
-    PyObject *kx = PyList_GetItem(Py_kxs, j);
-    kxs_[j] = PyFloat_AsDouble(kx);
-
     PyObject *ky = PyList_GetItem(Py_kys, j);
     kys_[j] = PyFloat_AsDouble(ky);
+
+    PyObject *rat = PyList_GetItem(Py_ratio_xys, j);
+    kxs_[j] = PyFloat_AsDouble(rat) * kys_[j];
 
     PyObject *Cv = PyList_GetItem(Py_Cvs, j);
     Cvs_[j] = PyFloat_AsDouble(Cv);
@@ -245,12 +245,12 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
 
   double lambda;
   PyObject *Py_ds;
-  PyObject *Py_kxs;
   PyObject *Py_kys;
+  PyObject *Py_ratio_xys;
   PyObject *Py_Cvs;
 
 
-  if (!PyArg_ParseTuple(args,"dOOOO",&lambda,&Py_ds,&Py_kxs,&Py_kys,&Py_Cvs))
+  if (!PyArg_ParseTuple(args,"dOOOO",&lambda,&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs))
     return NULL;
 
   if ((int) PyObject_Length(Py_ds) != n_layers)
@@ -260,11 +260,11 @@ static PyObject *Integrand(PyObject *self, PyObject *args)
     PyObject *d = PyList_GetItem(Py_ds, j);
     ds_[j] = PyFloat_AsDouble(d);
 
-    PyObject *kx = PyList_GetItem(Py_kxs, j);
-    kxs_[j] = PyFloat_AsDouble(kx);
-
     PyObject *ky = PyList_GetItem(Py_kys, j);
     kys_[j] = PyFloat_AsDouble(ky);
+
+    PyObject *rat = PyList_GetItem(Py_ratio_xys, j);
+    kxs_[j] = PyFloat_AsDouble(rat) * kys_[j];
 
     PyObject *Cv = PyList_GetItem(Py_Cvs, j);
     Cvs_[j] = PyFloat_AsDouble(Cv);
