@@ -102,4 +102,4 @@ class Model:
         self._power = None
 
     def plot_data(self, show=False):
-        return plot.plot_data(self, show)
+        return plot.plot_measured_data(self, show)

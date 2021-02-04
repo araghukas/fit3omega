@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import basinhopping
 
+import fit3omega.plot as plot
 from fit3omega.model import Model
 from fit3omega.data import ACReading
 
@@ -197,11 +198,9 @@ class FitGeneral(Model):
         err += sum(np.abs(self.T2.y - T2_func_.imag))
         return err / len(T2_func_)
 
-    def plot(self):
+    def plot_fit(self, show=False):
         """plot fit result"""
-        # result = self.result
-        # T2_func_ = self.T2_func(**self.result)
-        raise NotImplementedError
+        return plot.plot_fitted_T2(self, show=show)
 
     def set_data_limits(self, start, end):
         super().set_data_limits(start, end)
@@ -236,44 +235,3 @@ class FitGeneral(Model):
                       len(self.sample.layers),
                       self.b_type.encode('utf-8'))
         self._intg_set = True
-
-
-if __name__ == "__main__":
-    # TODO: avoid negative bounds
-    # TODO: custom ranges in config file
-    # TODO: normalize error function
-    # TODO: built in options SIMPLE ONES, fit variation, bias function?
-    # TODO: include deviation from guess in result output
-    # TODO: maybe a result class that handles readable representation and logging
-    import matplotlib.pyplot as plt
-
-    sample_ = "../sample/2232_2.f3oc"
-    data_ = "../sample/tc3omega_data_3.0_V.csv"
-    g = FitGeneral(sample_, data_, 'i')
-    g.set_data_limits(0, 48)
-    g.fit("fraction", niter=1, frac=.5)
-    print(g.result)
-
-    Xm = g.T2.x
-    Ym = g.T2.y
-    Rm = np.sqrt(Xm**2 + Ym**2)
-
-    Tf = g.T2_fit
-    Xf = Tf.x
-    Yf = Tf.y
-    Rf = Tf.norm()
-
-    fig, ax = plt.subplots()
-    ax.errorbar(g.omegas, Xm, g.T2.xerr * Xm, marker='o', markersize=5,
-                color="red", capsize=2, linewidth=0, elinewidth=1)
-    ax.errorbar(g.omegas, Ym, g.T2.yerr * Ym, marker='o', markersize=5,
-                color="blue", capsize=2, linewidth=0, elinewidth=1)
-    ax.errorbar(g.omegas, Rm, g.T2.relerr() * Ym, marker='o', markersize=5, color="black",
-                capsize=2, linewidth=0, elinewidth=1)
-
-    ax.plot(g.omegas, Xf, color="red", linestyle=':')
-    ax.plot(g.omegas, Yf, color="blue", linestyle=':')
-    ax.plot(g.omegas, Rf, color='black', linestyle=':', linewidth=1.5)
-    ax.set_xscale('log')
-
-    plt.show()
