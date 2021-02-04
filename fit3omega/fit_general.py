@@ -2,8 +2,14 @@ import numpy as np
 from scipy.optimize import basinhopping
 
 from fit3omega.model import Model
+from fit3omega.data import ACReading
 
 ROOT2 = np.sqrt(2)
+
+
+def bounds_by_fraction(guesses: list, frac: float):
+    f = frac / 2
+    return [((1 - f) * guess, (1 + f) * guess) for guess in guesses]
 
 
 class Stepper:
@@ -21,27 +27,80 @@ class Stepper:
         return cls(step_sizes)
 
 
-def bounds_by_fraction(guesses: list, frac: float):
-    f = frac / 2
-    return [((1 - f) * guess, (1 + f) * guess) for guess in guesses]
+class FitGeneralResult:
+    W = 10
+    SEP = "\t"
+
+    def __init__(self, sample, _guesses, _result, _ids):
+        self.sample = sample
+        self.guesses = _guesses
+        self.result = _result
+        self.ids = _ids
+
+        self._row = ["{:>%d}" % self.W] + (  # layer name
+                ["{:>%d,.2e}{:>%d}" % (self.W, self.W - 3)] * len(FitGeneral.FIT_ARG_NAMES)
+        )
+        self._header = [" " * self.W] + (  # layer name
+                ["{:>%d}{:>%d}" % (self.W, self.W - 3)] * len(FitGeneral.FIT_ARG_NAMES)
+        )
+
+    def __str__(self):
+        vals = []
+        errs = []
+        for layer in self.sample.layers:
+            vals.append([layer.__getattribute__(name[:-1]) for name in FitGeneral.FIT_ARG_NAMES])
+            errs.append([0] * len(FitGeneral.FIT_ARG_NAMES))
+
+        for j, id_pair in enumerate(self.ids):
+            i_arg, i_layer = id_pair
+            vals[i_layer][i_arg] = self.result[j]
+            errs[i_layer][i_arg] = (self.result[j] - self.guesses[j]) / self.guesses[j]
+
+        blank = self.SEP.join(self._row)
+        h_blank = self.SEP.join(self._header)
+
+        h_format_args = tuple()
+        for name in FitGeneral.FIT_ARG_NAMES:
+            h_format_args += (name, " ")
+
+        ROWS = [h_blank.format(*h_format_args)]
+
+        for i_layer, layer in enumerate(self.sample.layers):
+            format_args = [layer.name]
+
+            for i_arg in range(len(FitGeneral.FIT_ARG_NAMES)):
+                format_args.append(vals[i_layer][i_arg])
+
+                if errs[i_layer][i_arg] != 0:
+                    p = errs[i_layer][i_arg] * 100
+                    s = "({}{:.2f}%)".format('+' if p >= 0 else '-', abs(p))
+                    format_args.append(s)
+                else:
+                    format_args.append("")
+            ROWS.append(blank.format(*format_args))
+
+        return "\n".join(ROWS)
 
 
 class FitGeneral(Model):
     DEFAULT_GUESS = 100.0
     BOUNDARY_TYPES = ['s', 'i', 'a']
-
-    METHODS = {
-        "fraction": (Stepper.by_fraction, bounds_by_fraction)
-    }
+    FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
+    FIT_METHODS = {"fraction": (Stepper.by_fraction, bounds_by_fraction)}
 
     def __init__(self, sample, data, b_type):
         super().__init__(sample, data)
         self.n_layers = len(self.sample.layers)
         self._full_args = None
+
         self._fit_indices = []
         self._guesses = []
+        self._ids = []
+
         self._bias = None
-        self._defaults = (self.sample.heights, self.sample.kys, self.sample.ratio_xys, self.sample.Cvs)
+        self._defaults = (
+            self.sample.heights, self.sample.kys, self.sample.ratio_xys, self.sample.Cvs
+        )
 
         if b_type not in FitGeneral.BOUNDARY_TYPES:
             raise ValueError("boundary type {} is not one of {}"
@@ -56,61 +115,68 @@ class FitGeneral(Model):
             if type(arg) is str and arg.endswith('*'):
                 self._fit_indices.append(i)
                 self._guesses.append(float(arg.rstrip('*')))
+                self._ids.append(self._identify_fit_index(i))
 
         self._intg_set = False
         self._result = None
+        self._fitted_kwargs = None
         self._error = None
 
         # C-extension integrator module
         self.intg = __import__('intg')
-        self.vertex_shift = -0.4  # shifts parabolic omega weights left by 40% on log scale
+
+    @property
+    def T2_fit(self):
+        if self._result is None:
+            return None
+        T2 = self.T2_func(**self._fitted_kwargs)
+        x = T2.real
+        y = T2.imag
+        xerr = None
+        yerr = None  # TODO: an error estimate
+        return ACReading(x, y, xerr, yerr)
 
     @property
     def result(self):
         """fitted kwargs for `T2_func` method"""
-        if self._result is None:
-            raise ValueError("fit result has not been calculated")
         return self._result
 
     @property
     def error(self):
         """mean-squared error for fit"""
-        if self._error is None:
-            raise ValueError("fit result has not been calculated")
         return self._error
 
     @property
     def defaults(self):
         return self._defaults
 
-    @property
-    def bias(self):
-        if self._bias is None:
-            # concave-up parabolic omega weights favouring endpoints
-            u = np.log(self.omegas)
-            u_ave = np.average(u)
-            u_ave *= np.exp(self.vertex_shift)
-            b = (u - u_ave)**2
-            self._bias = 1 + b / np.max(b)
-        return self._bias
+    def fit(self, method: str = None, niter=10, **kwargs):
+        if method is None:
+            method = "fraction"
+            kwargs = dict(frac=0.5)
+        elif method not in FitGeneral.FIT_METHODS:
+            raise ValueError("unknown method '%s'" % method)
 
-    @bias.setter
-    def bias(self, s: str):
-        if s == "on":
-            self._bias = None
-        elif s == "off":
-            self._bias = np.ones(self.T2.x.shape)
-        else:
-            raise ValueError("argument other than 'on' or 'off'")
+        """MAIN FIT FUNCTION"""
+        stepper, bound_func = FitGeneral.FIT_METHODS[method]
+        kwargs["guesses"] = self._guesses
+        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
+                                  minimizer_kwargs={
+                                      'method': 'L-BFGS-B',
+                                      'bounds': bound_func(**kwargs)
+                                  },
+                                  take_step=stepper(**kwargs),
+                                  callback=lambda x, f, a: print(f) if a else print("x"))
+        self._record_result(fit_result)
 
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
         """T2 prediction from physical model and provided properties"""
         if not self._intg_set:
             self._set_intg()
 
-        P = -1 / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x  # scaled average power
-        kxs = [r * ky for r, ky in zip(ratio_xys, kys)]
-        return P * self.intg.integral(heights, kxs, kys, Cvs)  # average temperature rise
+        # extra divisor of ROOT2 since measured T2 amplitudes are RMS
+        P = -1 / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
+        return P * self.intg.integral(heights, kys, ratio_xys, Cvs)
 
     def T2_err_func(self, args) -> float:
         """objective function for the fit method"""
@@ -127,27 +193,9 @@ class FitGeneral(Model):
 
         T2_func_ = self.T2_func(*args_T2)
 
-        err = np.dot(np.abs(self.T2.phasor() - T2_func_), self.bias)
-        return err
-
-    def fit(self, method: str = None, niter=10, **kwargs):
-        if method is None:
-            method = "fraction"
-            kwargs = dict(frac=0.1)
-        elif method not in FitGeneral.METHODS:
-            raise ValueError("unknown method '%s'" % method)
-
-        """MAIN FIT FUNCTION"""
-        stepper, bound_func = FitGeneral.METHODS[method]
-        kwargs["guesses"] = self._guesses
-        fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
-                                  minimizer_kwargs={
-                                      'method': 'L-BFGS-B',
-                                      'bounds': bound_func(**kwargs)
-                                  },
-                                  take_step=stepper(**kwargs),
-                                  callback=lambda x, f, a: print(f) if a else print("x"))
-        self._record_result(fit_result)
+        err = sum(np.abs(self.T2.x - T2_func_.real))
+        err += sum(np.abs(self.T2.y - T2_func_.imag))
+        return err / len(T2_func_)
 
     def plot(self):
         """plot fit result"""
@@ -157,15 +205,11 @@ class FitGeneral(Model):
 
     def set_data_limits(self, start, end):
         super().set_data_limits(start, end)
-        self._bias = np.ones(self.T2.x.shape)
 
-    def _identify_fit_index(self, index) -> str:
-        prop_names = ["height", "ky", "ratio_xy", "Cv"]
-        i_prop = index // len(self.defaults[0])
-        i_name = index - i_prop * len(self.defaults[0])
-        name = self.sample.layers[i_name].name
-        prop = prop_names[i_prop]
-        return '.'.join([name, prop])
+    def _identify_fit_index(self, index) -> tuple:
+        i_arg = index // len(self.sample.heights)
+        i_layer = index - i_arg * len(self.sample.heights)
+        return i_arg, i_layer
 
     def _record_result(self, fit_result):
         fitted_argv = fit_result.x
@@ -180,8 +224,9 @@ class FitGeneral(Model):
             i_field = index - i_source * len(self.sample.heights)
             result[i_source][1][i_field] = fitted_argv[i]
 
-        self._result = {r[0]: r[1] for r in result}
+        self._fitted_kwargs = {r[0]: r[1] for r in result}
         self._error = fit_result.fun
+        self._result = FitGeneralResult(self.sample, self._guesses, fit_result.x, self._ids)
 
     def _set_intg(self):
         self.intg.set(self.omegas,
@@ -194,41 +239,41 @@ class FitGeneral(Model):
 
 
 if __name__ == "__main__":
+    # TODO: avoid negative bounds
+    # TODO: custom ranges in config file
+    # TODO: normalize error function
+    # TODO: built in options SIMPLE ONES, fit variation, bias function?
+    # TODO: include deviation from guess in result output
+    # TODO: maybe a result class that handles readable representation and logging
     import matplotlib.pyplot as plt
 
     sample_ = "../sample/2232_2.f3oc"
     data_ = "../sample/tc3omega_data_3.0_V.csv"
     g = FitGeneral(sample_, data_, 'i')
-    g.bias = "off"
-    # g.data.drop_row(42)
-    # g.data.drop_row(48)
-    g.set_data_limits(0, 40)
-    g.vertex_shift = -0.4
-    g.fit("fraction", niter=10, frac=1.0)
-    for k1, v1 in g.result.items():
-        print(k1, v1)
-    print(g.error)
+    g.set_data_limits(0, 48)
+    g.fit("fraction", niter=1, frac=.5)
+    print(g.result)
 
     Xm = g.T2.x
     Ym = g.T2.y
     Rm = np.sqrt(Xm**2 + Ym**2)
 
-    Tf = g.T2_func(**g.result)
-    Xf = Tf.real
-    Yf = Tf.imag
-    Rf = np.abs(Tf)
+    Tf = g.T2_fit
+    Xf = Tf.x
+    Yf = Tf.y
+    Rf = Tf.norm()
 
     fig, ax = plt.subplots()
-    ax.errorbar(g.omegas, Xm, g.T2.xerr * Xm, marker='o', markersize=5, markerfacecolor='white',
-                color="red", capsize=4, linewidth=0, elinewidth=1)
-    ax.errorbar(g.omegas, Ym, g.T2.yerr * Ym, marker='o', markersize=5, markerfacecolor='white',
-                color="blue", capsize=4, linewidth=0, elinewidth=1)
+    ax.errorbar(g.omegas, Xm, g.T2.xerr * Xm, marker='o', markersize=5,
+                color="red", capsize=2, linewidth=0, elinewidth=1)
+    ax.errorbar(g.omegas, Ym, g.T2.yerr * Ym, marker='o', markersize=5,
+                color="blue", capsize=2, linewidth=0, elinewidth=1)
     ax.errorbar(g.omegas, Rm, g.T2.relerr() * Ym, marker='o', markersize=5, color="black",
-                capsize=4, linewidth=0, elinewidth=1)
+                capsize=2, linewidth=0, elinewidth=1)
 
     ax.plot(g.omegas, Xf, color="red", linestyle=':')
     ax.plot(g.omegas, Yf, color="blue", linestyle=':')
-    ax.plot(g.omegas, Rf, color='black', linewidth=1.5)
+    ax.plot(g.omegas, Rf, color='black', linestyle=':', linewidth=1.5)
     ax.set_xscale('log')
 
     plt.show()
