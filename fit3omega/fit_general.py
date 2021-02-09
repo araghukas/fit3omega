@@ -151,10 +151,10 @@ class FitGeneral(Model):
     def defaults(self):
         return self._defaults
 
-    def fit(self, method: str = None, niter=10, **kwargs):
+    def fit(self, method: str = None, niter=30, **kwargs):
         if method is None:
             method = "fraction"
-            kwargs = dict(frac=0.5)
+            kwargs = dict(frac=1.0)
         elif method not in FitGeneral.FIT_METHODS:
             raise ValueError("unknown method '%s'" % method)
 
