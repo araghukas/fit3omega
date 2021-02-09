@@ -34,7 +34,7 @@ class CLI:
         "layers": {
             "name": "name",
             "height": "height [m]",
-            "ky": "cross-plane thermal conductivity [w/m/K]",
+            "ky": "cross-plane thermal conductivity [W/m/K]",
             "ratio_xy": "in/cross thermal conductivity ratio",
             "Cv": "heat capacity [J/m^3/K]",
         },
