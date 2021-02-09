@@ -245,6 +245,18 @@ def _plot_data(sample, data, show=True):
     exit(0)
 
 
+def _plot_compare_data(sample, data1, data2, show=True):
+    from .model import Model
+    from .plot import plot_compare_measured_data
+    m1 = Model(sample, data1)
+    m2 = Model(sample, data2)
+    fig = plot_compare_measured_data(m1, m2, show)
+    save_name = os.path.abspath(data1).strip(".csv") + "_compare_plot.pdf"
+    fig.savefig(save_name)
+    print("==> fit3omega: saved plot as %s" % save_name)
+    exit(0)
+
+
 def _fit_data(sample, data, show=True):
     from .fit_general import FitGeneral
     fg = FitGeneral(sample, data, 'i')
@@ -279,6 +291,10 @@ if __name__ == "__main__":
                         help="plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
+    parser.add_argument("-compare_data",
+                        help="plot 3omega voltage from two different runs on the same sample",
+                        nargs=3, type=str, default=None)
+
     parser.add_argument("-fit_data",
                         help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
@@ -291,6 +307,8 @@ if __name__ == "__main__":
         _write_blank_config()
     elif args.plot_data:
         _plot_data(*args.plot_data, show=args.show)
+    elif args.compare_data:
+        _plot_compare_data(*args.compare_data, show=args.show)
     elif args.fit_data:
         _fit_data(*args.fit_data, show=args.show)
     else:
