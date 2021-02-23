@@ -16,16 +16,22 @@ def bounds_by_fraction(guesses: list, frac: float):
 class Stepper:
     def __init__(self, step_sizes):
         self.step_sizes = step_sizes
+        self._bounds_func = None
 
     def __call__(self, x):
         for i, s in enumerate(self.step_sizes):
             x[i] += np.random.uniform(-s, s)
         return x
 
+    def get_bounds(self, *args, **kwargs):
+        return self._bounds_func(*args, **kwargs)
+
     @classmethod
     def by_fraction(cls, guesses: list, frac: float):
         step_sizes = [guess * frac for guess in guesses]
-        return cls(step_sizes)
+        stp = cls(step_sizes)
+        stp._bounds_func = bounds_by_fraction
+        return stp
 
 
 class FitGeneralResult:
@@ -87,7 +93,6 @@ class FitGeneral(Model):
     DEFAULT_GUESS = 100.0
     BOUNDARY_TYPES = ['s', 'i', 'a']
     FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
-    FIT_METHODS = {"fraction": (Stepper.by_fraction, bounds_by_fraction)}
 
     def __init__(self, sample, data, b_type):
         super().__init__(sample, data)
@@ -151,22 +156,15 @@ class FitGeneral(Model):
     def defaults(self):
         return self._defaults
 
-    def fit(self, method: str = None, niter=30, **kwargs):
-        if method is None:
-            method = "fraction"
-            kwargs = dict(frac=1.0)
-        elif method not in FitGeneral.FIT_METHODS:
-            raise ValueError("unknown method '%s'" % method)
-
-        """MAIN FIT FUNCTION"""
-        stepper, bound_func = FitGeneral.FIT_METHODS[method]
+    def fit(self, niter=30, **kwargs):
         kwargs["guesses"] = self._guesses
+        stepper = Stepper.by_fraction(**kwargs)
         fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
                                   minimizer_kwargs={
                                       'method': 'L-BFGS-B',
-                                      'bounds': bound_func(**kwargs)
+                                      'bounds': stepper.get_bounds(**kwargs)
                                   },
-                                  take_step=stepper(**kwargs),
+                                  take_step=stepper,
                                   callback=lambda x, f, a: print(f) if a else print("x"))
         self._record_result(fit_result)
 
