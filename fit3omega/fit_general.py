@@ -165,7 +165,7 @@ class FitGeneral(Model):
                                       'bounds': stepper.get_bounds(**kwargs)
                                   },
                                   take_step=stepper,
-                                  callback=lambda x, f, a: print(f) if a else print("x"))
+                                  callback=lambda x, f, a: print(f, ":", x) if a else print("x"))
         self._record_result(fit_result)
 
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:

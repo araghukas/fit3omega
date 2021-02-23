@@ -56,6 +56,13 @@ class Data:
         self._data = pd.read_csv(data_csv, header="infer")
         self._data_file = data_csv
 
+        # Data limits and voltage readings
+        self._start = 0
+        self._end = None
+        self._V = None
+        self._V3 = None
+        self._Vsh = None
+
         if error_csv:
             self._error = pd.read_csv(error_csv, header="infer")
             self._error_file = error_csv
@@ -71,13 +78,6 @@ class Data:
 
         if len(self._data) != len(self._error):
             raise ValueError("data-error length mismatch")
-
-        # Data limits and voltage readings
-        self._start = None
-        self._end = None
-        self._V = None
-        self._V3 = None
-        self._Vsh = None
 
     def set_limits(self, start: int, end: int):
         self._V = None
