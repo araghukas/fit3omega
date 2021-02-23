@@ -164,7 +164,7 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
     return fig
 
 
-def plot_fitted_T2(fg, show: bool = False) -> plt.Figure:
+def plot_fitted_T2(fg, show: bool = False) -> tuple:
     """plot fitted curves against measured T2 components"""
     fig, ax = plt.subplots(tight_layout=True)
 
@@ -191,4 +191,4 @@ def plot_fitted_T2(fg, show: bool = False) -> plt.Figure:
     ax.set_xscale('log')
     if show:
         plt.show()
-    return fig
+    return fig, ax
