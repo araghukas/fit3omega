@@ -245,6 +245,17 @@ def _plot_data(sample, data, show=True):
     exit(0)
 
 
+def _plot_diagnostics(sample, data, show=True):
+    from .model import Model
+    from .plot import plot_diagnostics
+    m = Model(sample, data)
+    fig = plot_diagnostics(m, show)
+    save_name = os.path.abspath(data).strip(".csv") + "_diagnostic.pdf"
+    fig.savefig(save_name)
+    print("==> fig3omega: saved plot as %s" % save_name)
+    exit(0)
+
+
 def _plot_compare_data(sample, data1, data2, show=True):
     from .model import Model
     from .plot import plot_compare_measured_data
@@ -291,6 +302,11 @@ if __name__ == "__main__":
                         help="plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
+    parser.add_argument("-plot_diagnostics",
+                        help="plot power and 3omega voltage over current cubed "
+                             "from sample config and data csv",
+                        nargs=2, type=str, default=None)
+
     parser.add_argument("-compare_data",
                         help="plot 3omega voltage from two different runs on the same sample",
                         nargs=3, type=str, default=None)
@@ -307,6 +323,8 @@ if __name__ == "__main__":
         _write_blank_config()
     elif args.plot_data:
         _plot_data(*args.plot_data, show=args.show)
+    elif args.plot_diagnostics:
+        _plot_diagnostics(*args.plot_diagnostics, show=args.show)
     elif args.compare_data:
         _plot_compare_data(*args.compare_data, show=args.show)
     elif args.fit_data:

@@ -63,9 +63,9 @@ def plot_measured_data(m, show: bool = False) -> plt.Figure:
     ax_V3.errorbar(X, m.V3.norm(), m.V3.abserr(), color=cz, elinewidth=.5)
     ax_V3.grid(which="both")
 
-    ax_T2.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x, color=cx, elinewidth=.5)
-    ax_T2.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y, color=cy, elinewidth=.5)
-    ax_T2.errorbar(X, m.T2.norm(), m.T2.abserr(), color=cz, elinewidth=.5)
+    ax_T2.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x, color=cx, markerfacecolor=cx, elinewidth=.5)
+    ax_T2.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y, color=cy, markerfacecolor=cy, elinewidth=.5)
+    ax_T2.errorbar(X, m.T2.norm(), m.T2.abserr(), color=cz, markerfacecolor=cz, elinewidth=.5)
     ax_T2.grid(which="both")
 
     if show:
@@ -164,7 +164,7 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
     return fig
 
 
-def plot_fitted_T2(fg, show: bool = False) -> tuple:
+def plot_fitted_T2(fit_general, show: bool = False) -> tuple:
     """plot fitted curves against measured T2 components"""
     fig, ax = plt.subplots(tight_layout=True)
 
@@ -174,17 +174,17 @@ def plot_fitted_T2(fg, show: bool = False) -> tuple:
     cs = ["blue", "red", "black"]
     ls = ["X", "Y", "R"]
 
-    X = fg.omegas / 2 / PI
-    ax.errorbar(X, fg.T2.x, fg.T2.xerr * fg.T2.x, linewidth=0, elinewidth=.5,
-                color=cs[0], label=ls[0])
-    ax.errorbar(X, fg.T2.y, fg.T2.yerr * fg.T2.y, linewidth=0, elinewidth=.5,
-                color=cs[1], label=ls[1])
-    ax.errorbar(X, fg.T2.norm(), fg.T2.relerr() * fg.T2.norm(), linewidth=0, elinewidth=1,
-                color=cs[2], label=ls[2])
+    X = fit_general.omegas / 2 / PI
+    ax.errorbar(X, fit_general.T2.x, fit_general.T2.xerr * fit_general.T2.x,
+                linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
+    ax.errorbar(X, fit_general.T2.y, fit_general.T2.yerr * fit_general.T2.y,
+                linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
+    ax.errorbar(X, fit_general.T2.norm(), fit_general.T2.relerr() * fit_general.T2.norm(),
+                linewidth=0, elinewidth=1, color=cs[2], label=ls[2])
 
-    ax.plot(X, fg.T2_fit.x, markersize=0, color=cs[0])
-    ax.plot(X, fg.T2_fit.y, markersize=0, color=cs[1])
-    ax.plot(X, fg.T2_fit.norm(), markersize=0, color=cs[2])
+    ax.plot(X, fit_general.T2_fit.x, markersize=0, color=cs[0])
+    ax.plot(X, fit_general.T2_fit.y, markersize=0, color=cs[1])
+    ax.plot(X, fit_general.T2_fit.norm(), markersize=0, color=cs[2])
 
     ax.legend(frameon=False)
 
@@ -192,3 +192,49 @@ def plot_fitted_T2(fg, show: bool = False) -> tuple:
     if show:
         plt.show()
     return fig, ax
+
+
+def plot_diagnostics(m, show: bool = False) -> plt.Figure:
+    """plot V3/I^3 and power from measured data"""
+    from numpy import sqrt
+    fig = plt.figure(figsize=(10, 5))
+
+    ax_power = fig.add_subplot(121)
+    ax_VI = fig.add_subplot(122)
+
+    ax_power.set_xscale("log")
+    ax_VI.set_xscale("log")
+
+    fig.text(0.5, 0.05, "Source Frequency [Hz]",
+             ha="center", va="top", fontsize=15)
+
+    ax_power.set_ylabel("Power [mW]")
+    ax_VI.set_ylabel(r"$V_{3\omega,x} (I_{1\omega})^{-3}$")
+
+    ax_power.grid("both")
+    ax_VI.grid("both")
+
+    X = m.omegas / 2. / PI
+
+    power = m.power.norm() * 1e3  # mW
+    dpower = m.power.abserr()
+
+    ax_power.errorbar(X, power, dpower, elinewidth=.5, color='k')
+    min_power = min(power)
+    max_power = max(power)
+    power_range = max_power - min_power
+    ax_power.set_ylim(min(power) - power_range, max(power) + power_range)
+
+    V3x = m.V3.x
+    dV3x = V3x * m.V3.xerr
+    I_cubed = m.Ish.norm()**3
+    dI_cubed = sqrt(3) * m.Ish.abserr()
+
+    VI = V3x / I_cubed
+    dVI = sqrt(dV3x**2 + dI_cubed**2)
+
+    ax_VI.errorbar(X, VI, dVI, elinewidth=.5, color='coral')
+
+    if show:
+        plt.show()
+    return fig
