@@ -268,16 +268,16 @@ def _plot_compare_data(sample, data1, data2, show=True):
     exit(0)
 
 
-def _fit_data(sample, data, show=True):
+def _fit_data(sample, data, frac, show=True):
     from .fit_general import FitGeneral
     fg = FitGeneral(sample, data, 'i')
-    fg.fit()
+    fg.fit(frac=frac)
 
     print()
     print(fg.result)
     print()
 
-    fig = fg.plot_fit(show=show)
+    fig, ax = fg.plot_fit(show=show)
     save_name = os.path.abspath(data).rstrip(".csv") + "_fit.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
@@ -315,6 +315,10 @@ if __name__ == "__main__":
                         help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
+    parser.add_argument("-frac",
+                        help="perturbation fraction in interval (0,1)",
+                        type=float, default=0.1)
+
     args = parser.parse_args()
 
     if args.new:
@@ -328,7 +332,7 @@ if __name__ == "__main__":
     elif args.compare_data:
         _plot_compare_data(*args.compare_data, show=args.show)
     elif args.fit_data:
-        _fit_data(*args.fit_data, show=args.show)
+        _fit_data(*args.fit_data, frac=args.frac, show=args.show)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)
