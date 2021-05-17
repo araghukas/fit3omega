@@ -268,10 +268,12 @@ def _plot_compare_data(sample, data1, data2, show=True):
     exit(0)
 
 
-def _fit_data(sample, data, frac, show=True):
+def _fit_data(sample, data, frac, niter, data_lims, b_type, show=True):
     from .fit_general import FitGeneral
-    fg = FitGeneral(sample, data, 'i')
-    fg.fit(frac=frac)
+    fg = FitGeneral(sample, data, b_type)
+    start, end = (0, len(fg.data)) if data_lims is None else data_lims
+    fg.set_data_limits(start, end)
+    fg.fit(niter=niter, frac=frac)
 
     print()
     print(fg.result)
@@ -319,6 +321,18 @@ if __name__ == "__main__":
                         help="perturbation fraction in interval (0,1)",
                         type=float, default=0.1)
 
+    parser.add_argument("-niter",
+                        help="number of basinhopping iterations",
+                        type=int, default=30)
+
+    parser.add_argument("-data_lims",
+                        help="indices of first and last data points",
+                        nargs=2, type=int, default=None)
+
+    parser.add_argument("-b_type",
+                        help="boundary type for general heat transfer model",
+                        type=str, default='i')
+
     args = parser.parse_args()
 
     if args.new:
@@ -332,7 +346,12 @@ if __name__ == "__main__":
     elif args.compare_data:
         _plot_compare_data(*args.compare_data, show=args.show)
     elif args.fit_data:
-        _fit_data(*args.fit_data, frac=args.frac, show=args.show)
+        _fit_data(*args.fit_data,
+                  frac=args.frac,
+                  niter=args.niter,
+                  data_lims=args.data_lims,
+                  show=args.show,
+                  b_type=args.b_type)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)

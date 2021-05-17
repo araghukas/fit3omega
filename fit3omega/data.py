@@ -79,6 +79,9 @@ class Data:
         if len(self._data) != len(self._error):
             raise ValueError("data-error length mismatch")
 
+    def __len__(self):
+        return len(self.data)
+
     def set_limits(self, start: int, end: int):
         self._V = None
         self._V3 = None
