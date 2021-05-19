@@ -201,7 +201,7 @@ class FitGeneral(Model):
         T2_func_ = self.T2_func(*args_T2)
 
         err = sum(np.abs(self.T2.x - T2_func_.real))
-        err += sum(np.abs(self.T2.y - T2_func_.imag))
+        # err += sum(np.abs(self.T2.y - T2_func_.imag))
         return err / len(T2_func_)
 
     def plot_fit(self, show=False):
