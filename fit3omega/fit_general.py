@@ -10,7 +10,15 @@ ROOT2 = np.sqrt(2)
 
 def bounds_by_fraction(guesses: list, frac: float):
     f = frac / 2
-    return [((1 - f) * guess, (1 + f) * guess) for guess in guesses]
+    a1 = 1 - f
+    a2 = 1 + f
+    if a1 > a2:
+        a1, a2 = a2, a1
+
+    a2 = 0.0 if frac < 0 < a2 else a2  # neg. fraction clamp to [1+f  ,   0]
+    a1 = 0.0 if a1 < 0 < frac else a1  # pos. fraction clamp to [    0, 1+f]
+
+    return [(a1 * guess, a2 * guess) for guess in guesses]
 
 
 class Stepper:
@@ -165,7 +173,7 @@ class FitGeneral(Model):
                                       'bounds': stepper.get_bounds(**kwargs)
                                   },
                                   take_step=stepper,
-                                  callback=lambda x, f, a: print(f, ":", x) if a else print("x"))
+                                  callback=lambda x, f, a: print("%.6e :" % f, x) if a else print("x"))
         self._record_result(fit_result)
 
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
