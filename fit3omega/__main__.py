@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-frac",
                         help="perturbation fraction in interval (0,1)",
-                        type=float, default=0.1)
+                        type=float, default=1.0)
 
     parser.add_argument("-niter",
                         help="number of basinhopping iterations",
