@@ -8,19 +8,6 @@ from fit3omega.data import ACReading
 ROOT2 = np.sqrt(2)
 
 
-def bounds_by_fraction(guesses: list, frac: float):
-    f = frac / 2
-    a1 = 1 - f
-    a2 = 1 + f
-    if a1 > a2:
-        a1, a2 = a2, a1
-
-    a2 = 0.0 if frac < 0 < a2 else a2  # neg. fraction clamp to [1+f  ,   0]
-    a1 = 0.0 if a1 < 0 < frac else a1  # pos. fraction clamp to [    0, 1+f]
-
-    return [(a1 * guess, a2 * guess) for guess in guesses]
-
-
 class Stepper:
     def __init__(self, step_sizes):
         self.step_sizes = step_sizes
@@ -38,8 +25,47 @@ class Stepper:
     def by_fraction(cls, guesses: list, frac: float):
         step_sizes = [guess * frac for guess in guesses]
         stp = cls(step_sizes)
-        stp._bounds_func = bounds_by_fraction
+        stp._bounds_func = Stepper.bounds_by_fraction
         return stp
+
+    @staticmethod
+    def bounds_by_fraction(guesses: list, frac: float):
+        f = frac / 2
+        a1 = 1 - f
+        a2 = 1 + f
+        if a1 > a2:
+            a1, a2 = a2, a1
+
+        a2 = 0.0 if frac < 0 < a2 else a2  # neg. fraction clamp to [1+f  ,   0]
+        a1 = 0.0 if a1 < 0 < frac else a1  # pos. fraction clamp to [    0, 1+f]
+
+        return [(a1 * guess, a2 * guess) for guess in guesses]
+
+
+class BasicPrinterCallBack:
+    def __init__(self, i_max):
+        self.counter = 1
+
+        if i_max <= 0:
+            raise ValueError("non-positive value for i_max")
+        self.i_max = i_max
+
+        self._index_field_width = int(np.log(i_max) / np.log(10.)) + 2
+        self._min_f = None
+
+    def __call__(self, x, f, a):
+        if self._min_f is None:
+            self._min_f = f
+
+        s = (("{:>%d,d} | {:.6e} ({:.4f}) | " % self._index_field_width)
+             .format(self.counter, f, f - self._min_f))
+        for arg_val in x:
+            s += "{:>16,.5e}".format(arg_val)
+        print(s.replace(",", ""))
+
+        self.counter += 1
+        if f < self._min_f:
+            self._min_f = f
 
 
 class FitGeneralResult:
@@ -167,13 +193,14 @@ class FitGeneral(Model):
     def fit(self, niter=30, **kwargs):
         kwargs["guesses"] = self._guesses
         stepper = Stepper.by_fraction(**kwargs)
+        callback = BasicPrinterCallBack(niter)
         fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
                                   minimizer_kwargs={
                                       'method': 'L-BFGS-B',
                                       'bounds': stepper.get_bounds(**kwargs)
                                   },
                                   take_step=stepper,
-                                  callback=lambda x, f, a: print("%.6e :" % f, x) if a else print("x"))
+                                  callback=callback)
         self._record_result(fit_result)
 
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
