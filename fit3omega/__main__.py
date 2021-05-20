@@ -235,40 +235,40 @@ def _launch_cli():
     CLI().run()
 
 
-def _plot_data(sample, data, show=True):
+def _plot_data(sample, data, label, show=True):
     from .model import Model
     m = Model(sample, data)
     fig = m.plot_data(show=show)
-    save_name = os.path.abspath(data).strip(".csv") + "_plot.pdf"
+    save_name = os.path.abspath(data).strip(".csv") + label + "_plot.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
-def _plot_diagnostics(sample, data, show=True):
+def _plot_diagnostics(sample, data, label, show=True):
     from .model import Model
     from .plot import plot_diagnostics
     m = Model(sample, data)
     fig = plot_diagnostics(m, show)
-    save_name = os.path.abspath(data).strip(".csv") + "_diagnostic.pdf"
+    save_name = os.path.abspath(data).strip(".csv") + label + "_diagnostic.pdf"
     fig.savefig(save_name)
     print("==> fig3omega: saved plot as %s" % save_name)
     exit(0)
 
 
-def _plot_compare_data(sample, data1, data2, show=True):
+def _plot_compare_data(sample, data1, data2, label, show=True):
     from .model import Model
     from .plot import plot_compare_measured_data
     m1 = Model(sample, data1)
     m2 = Model(sample, data2)
     fig = plot_compare_measured_data(m1, m2, show)
-    save_name = os.path.abspath(data1).strip(".csv") + "_compare_plot.pdf"
+    save_name = os.path.abspath(data1).strip(".csv") + label + "_compare_plot.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
-def _fit_data(sample, data, frac, niter, data_lims, b_type, show=True):
+def _fit_data(sample, data, frac, niter, data_lims, b_type, label, show=True):
     from .fit_general import FitGeneral
     fg = FitGeneral(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
@@ -280,7 +280,7 @@ def _fit_data(sample, data, frac, niter, data_lims, b_type, show=True):
     print()
 
     fig, ax = fg.plot_fit(show=show)
-    save_name = os.path.abspath(data).rstrip(".csv") + "_fit.pdf"
+    save_name = os.path.abspath(data).rstrip(".csv") + label + "_fit.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
@@ -333,6 +333,10 @@ if __name__ == "__main__":
                         help="boundary type for general heat transfer model",
                         type=str, default='i')
 
+    parser.add_argument("-label",
+                        help="label to append to saved files",
+                        type=str, default="")
+
     args = parser.parse_args()
 
     if args.new:
@@ -340,18 +344,19 @@ if __name__ == "__main__":
     elif args.blank:
         _write_blank_config()
     elif args.plot_data:
-        _plot_data(*args.plot_data, show=args.show)
+        _plot_data(*args.plot_data, show=args.show, label=args.label)
     elif args.plot_diagnostics:
-        _plot_diagnostics(*args.plot_diagnostics, show=args.show)
+        _plot_diagnostics(*args.plot_diagnostics, show=args.show, label=args.label)
     elif args.compare_data:
-        _plot_compare_data(*args.compare_data, show=args.show)
+        _plot_compare_data(*args.compare_data, show=args.show, label=args.label)
     elif args.fit_data:
         _fit_data(*args.fit_data,
                   frac=args.frac,
                   niter=args.niter,
                   data_lims=args.data_lims,
                   show=args.show,
-                  b_type=args.b_type)
+                  b_type=args.b_type,
+                  label=args.label)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)

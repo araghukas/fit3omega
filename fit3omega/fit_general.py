@@ -70,12 +70,12 @@ class BasicPrinterCallBack:
         ])
 
         if is_new_min:
-            s += " <--- min #%d" % self._min_counter
+            h_line = "-" * len(s)
+            s = "\n".join([h_line, s + " <--- min #%d" % self._min_counter, h_line])
             self._min_counter += 1
             self._min_f = f
 
-        print(s.replace(",", ""))
-
+        print(s)
         self._counter += 1
 
 
