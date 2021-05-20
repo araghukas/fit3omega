@@ -51,7 +51,7 @@ class BasicPrinterCallBack:
         self.i_max = i_max
 
         self._counter = 1
-        self._index_field_width = int(np.log(i_max) / np.log(10.)) + 2
+        self._idx_col_width = int(np.log(i_max) / np.log(10.)) + 2
         self._min_f = None
         self._min_counter = 1
 
@@ -63,10 +63,11 @@ class BasicPrinterCallBack:
             is_new_min = (self._min_f - f) > self.MIN_F_THRESH
 
         g = "-" if is_new_min else "+"
-        s = (("{:>%d,d} | {:.6e} (%s{:.4f}) | " % (self._index_field_width, g))
-             .format(self._counter, f, abs(f - self._min_f)))
-        for arg_val in x:
-            s += "{:>16,.5e}".format(arg_val)
+        s = " | ".join([
+            ("{:>%d}" % self._idx_col_width).format(self._counter),
+            ("{:.6e} (%s{:.4f})" % g).format(f, abs(f - self._min_f)),
+            "".join(["{:>16,.5e}".format(arg_val) for arg_val in x])
+        ])
 
         if is_new_min:
             s += " <--- min #%d" % self._min_counter
