@@ -43,29 +43,39 @@ class Stepper:
 
 
 class BasicPrinterCallBack:
-    def __init__(self, i_max):
-        self.counter = 1
+    MIN_F_THRESH = 1e-6
 
+    def __init__(self, i_max):
         if i_max <= 0:
             raise ValueError("non-positive value for i_max")
         self.i_max = i_max
 
+        self._counter = 1
         self._index_field_width = int(np.log(i_max) / np.log(10.)) + 2
         self._min_f = None
+        self._min_counter = 1
 
     def __call__(self, x, f, a):
         if self._min_f is None:
             self._min_f = f
+            is_new_min = False
+        else:
+            is_new_min = (self._min_f - f) > self.MIN_F_THRESH
 
-        s = (("{:>%d,d} | {:.6e} ({:.4f}) | " % self._index_field_width)
-             .format(self.counter, f, f - self._min_f))
+        g = "-" if is_new_min else "+"
+        s = (("{:>%d,d} | {:.6e} (%s{:.4f}) | " % (self._index_field_width, g))
+             .format(self._counter, f, abs(f - self._min_f)))
         for arg_val in x:
             s += "{:>16,.5e}".format(arg_val)
+
+        if is_new_min:
+            s += " <--- min #%d" % self._min_counter
+            self._min_counter += 1
+            self._min_f = f
+
         print(s.replace(",", ""))
 
-        self.counter += 1
-        if f < self._min_f:
-            self._min_f = f
+        self._counter += 1
 
 
 class FitGeneralResult:
