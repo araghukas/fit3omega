@@ -2,19 +2,21 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from math import pi as PI
 
-mpl.rc('xtick', direction='in')
-mpl.rc('ytick', direction='in')
-mpl.rc('axes', labelsize=15)
-mpl.rc('lines', marker='o')
-mpl.rc('lines', markerfacecolor='white')
-mpl.rc('lines', markersize=4)
-mpl.rc('errorbar', capsize=2)
-mpl.rc('legend', fontsize=13)
+
+def _set_mpl_defaults():
+    mpl.rc('xtick', direction='in')
+    mpl.rc('ytick', direction='in')
+    mpl.rc('axes', labelsize=15)
+    mpl.rc('lines', marker='o')
+    mpl.rc('lines', markerfacecolor='white')
+    mpl.rc('lines', markersize=4)
+    mpl.rc('errorbar', capsize=2)
+    mpl.rc('legend', fontsize=13)
 
 
 def plot_measured_data(m, show: bool = False) -> plt.Figure:
     """basic plot of sample voltages, shunt current, and temperature rise"""
-
+    _set_mpl_defaults()
     fig = plt.figure(tight_layout=True, figsize=(10, 8))
 
     ax_V = fig.add_subplot(221)
@@ -75,6 +77,7 @@ def plot_measured_data(m, show: bool = False) -> plt.Figure:
 
 def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
     """basic plot of sample voltages, shunt current, and temperature rise"""
+    _set_mpl_defaults()
     mpl.rc('lines', markersize=0)
 
     fig = plt.figure(tight_layout=True, figsize=(10, 8))
@@ -166,6 +169,7 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
 
 def plot_fitted_T2(fit_general, show: bool = False) -> tuple:
     """plot fitted curves against measured T2 components"""
+    _set_mpl_defaults()
     fig, ax = plt.subplots(tight_layout=True)
 
     ax.set_xlabel(r"Source Frequency [Hz]")
@@ -195,6 +199,7 @@ def plot_fitted_T2(fit_general, show: bool = False) -> tuple:
 
 
 def plot_diagnostics(m, show: bool = False) -> plt.Figure:
+    _set_mpl_defaults()
     """plot V3/I^3 and power from measured data"""
     from numpy import sqrt
     fig = plt.figure(figsize=(10, 5))
