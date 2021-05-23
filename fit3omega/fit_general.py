@@ -65,13 +65,13 @@ class BasicPrinterCallBack:
         g = "-" if is_new_min else "+"
         s = " | ".join([
             ("{:>%d}" % self._idx_col_width).format(self._counter),
-            ("{:.6e} (%s{:.4f})" % g).format(f, abs(f - self._min_f)),
-            "".join(["{:>16,.5e}".format(arg_val) for arg_val in x])
+            ("{:.3e} (%s{:.5f})" % g).format(f, abs(f - self._min_f)),
+            "".join(["{:>16,.3e}".format(arg_val) for arg_val in x])
         ])
 
         if is_new_min:
             h_line = "-" * len(s)
-            s = "\n".join([h_line, s + " <--- min #%d" % self._min_counter, h_line])
+            s = "\n".join([h_line, s + " min %d" % self._min_counter, h_line])
             self._min_counter += 1
             self._min_f = f
 
@@ -220,7 +220,7 @@ class FitGeneral(Model):
             self._set_intg()
 
         # extra divisor of ROOT2 since measured T2 amplitudes are RMS
-        P = -1 / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
+        P = -1. / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
         return P * self.intg.integral(heights, kys, ratio_xys, Cvs)
 
     def T2_err_func(self, args) -> float:
