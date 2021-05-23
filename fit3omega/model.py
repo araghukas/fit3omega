@@ -24,10 +24,21 @@ class Model:
         else:
             raise ValueError("invalid `data` type; need str or fit3omega.data.Data")
 
+        # if true, always recalculate data-derived values (below) when accessing props.
+        self._refresh_dependents = False
+
         self._Ish = None
         self._T2 = None
         self._dT2 = None
         self._power = None
+
+    def set_refresh(self, b: bool) -> None:
+        if b is True:
+            self._refresh_dependents = True
+        elif b is False:
+            self._refresh_dependents = False
+        else:
+            raise ValueError("argument of set_refresh is not a boolean")
 
     @property
     def shunt(self) -> Shunt:
@@ -56,7 +67,7 @@ class Model:
     @property
     def Ish(self) -> ACReading:
         """RMS series current through heater and shunt"""
-        if self._Ish is None:
+        if self._Ish is None or self._refresh_dependents:
             x = self.Vsh.x / self.shunt.R
             y = self.Vsh.y / self.shunt.R
             xerr = np.sqrt(self.Vsh.xerr**2 + self.shunt.err**2)
@@ -67,7 +78,7 @@ class Model:
     @property
     def T2(self) -> ACReading:
         """RMS amplitude of temperature oscillations at double-frequency"""
-        if self._T2 is None:
+        if self._T2 is None or self._refresh_dependents:
             x = ROOT2 * np.abs(self.V3.x) / self.heater.dRdT / self.Ish.norm()
             y = -ROOT2 * np.abs(self.V3.y) / self.heater.dRdT / self.Ish.norm()
             xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + self.Ish.relerr()**2)
@@ -78,7 +89,7 @@ class Model:
     @property
     def power(self) -> ACReading:
         """complex power (IEEE Std 1459-2010)"""
-        if self._power is None:
+        if self._power is None or self._refresh_dependents:
             phi = self.V.phi() - self.Ish.phi()  # power factor angle
             A = np.cos(phi)
             B = np.sin(phi)
