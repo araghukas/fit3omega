@@ -12,10 +12,8 @@ class Model:
     def __init__(self, sample, data):
         if type(sample) is str:
             self.sample = Sample(sample)
-        elif type(sample) is Sample:
-            self.sample = sample
         else:
-            raise ValueError("invalid `sample` type; need str or fit3omega.sample.Sample")
+            self.sample = sample
 
         if type(data) is str:
             self.data = Data(data)
