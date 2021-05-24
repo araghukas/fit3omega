@@ -274,10 +274,14 @@ class SliderPlot:
 
     slider_delta = [0.0, -0.05, 0.0, 0.0]
 
-    error_fmt = "error: {:>10,.6e}"
+    error_fmt = "error: {:<10,.6e}"
 
     def __init__(self, m):
+        mpl.rc("font", family="monospace")
         self.frac = 0.99
+        self._x_scale = "log(x)"
+
+        m.sample = m.sample.as_var_sample()
 
         self.m = m
         self.fig, self.ax = plt.subplots(figsize=(12, 5))
@@ -321,9 +325,10 @@ class SliderPlot:
         self.ax.plot(X, fit[0], color=cx, **self.fit_plot_kw)
         self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
         self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
-        self.ax.text(0.7, 0.95, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
-                     fontsize=8)
+        self.ax.text(0.7, 1.05, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
+                     fontsize=8, color=self._get_error_color(fit[3]), fontweight="bold")
 
+        # prepare the sliders
         for i, layer in enumerate(self.m.sample.layers):
             d = layer.as_dict()
             for k, v in d.items():
@@ -334,7 +339,7 @@ class SliderPlot:
                     axes = plt.axes(self._get_slider_dims())
                     self.sliders[label] = Slider(
                         ax=axes,
-                        label=label,
+                        label=label.replace('.', ' '),
                         valmin=(1 - self.frac) * guess_val,
                         valmax=(1 + self.frac) * guess_val,
                         valinit=guess_val,
@@ -342,12 +347,20 @@ class SliderPlot:
                     )
                     self.sliders[label].on_changed(self._update_sliders)
 
+        # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
         reset_button_dims[2:] = [0.05, 0.05]
         reset_button_dims[1] -= 0.025
         self.buttons["Reset"] = Button(plt.axes(reset_button_dims), "Reset",
                                        hovercolor=self.button_hovercolor)
         self.buttons["Reset"].on_clicked(self._reset_sliders)
+
+        # sloppy x-scale toggle creation
+        xscale_button_dims = reset_button_dims
+        xscale_button_dims[0] += 0.055
+        self.buttons["x-scale"] = Button(plt.axes(xscale_button_dims), self._x_scale,
+                                         hovercolor=self.button_hovercolor)
+        self.buttons["x-scale"].on_clicked(self._toggle_xscale)
 
     def _update_sliders(self, _):
         for label, slider in self.sliders.items():
@@ -358,13 +371,23 @@ class SliderPlot:
         self.ax.lines[4].set_ydata(fit[1])
         self.ax.lines[5].set_ydata(fit[2])
         self.ax.texts[0].set_text(self.error_fmt.format(fit[3]))
+        self.ax.texts[0].set_color(self._get_error_color(fit[3]))
         self.fig.canvas.draw_idle()
-        print(fit[3])
 
     def _reset_sliders(self, _):
         for label in self.sliders:
             self.sliders[label].reset()
         self.m.sample.reset_params()
+
+    def _toggle_xscale(self, _):
+        if self._x_scale == "log(x)":
+            self.ax.set_xscale("linear")
+            self._x_scale = "x"
+        else:
+            self.ax.set_xscale("log")
+            self._x_scale = "log(x)"
+
+        self.buttons["x-scale"].label.set_text(self._x_scale)
 
     def _get_slider_dims(self):
         dims = []
@@ -372,3 +395,15 @@ class SliderPlot:
         for x, d in zip(self.slider_start_dims, self.slider_delta):
             dims.append(x + n * d)
         return dims
+
+    @staticmethod
+    def _get_error_color(err):
+        if err > 1.0:
+            return 1.0, 0.0, 0.0
+        elif 0.1 < err < 1.0:
+            return (err - 0.1), 0.0, 0.0
+        elif 0.0 <= err <= 0.1:
+            return 0.0, (0.1 - err) / 0.1, 0.0
+        else:
+            return 0.0, 0.0, 0.0
+
