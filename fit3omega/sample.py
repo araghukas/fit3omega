@@ -18,6 +18,7 @@ class Sample:
         self.heater = None
         self.layers = []
         self.load_config(config_file)
+        self._config_file = config_file
 
     def load_config(self, config_file):
         with open(config_file, 'r') as f:
@@ -53,36 +54,8 @@ class Sample:
     def Cvs(self):
         return [layer.Cv for layer in self.layers]
 
-
-class Shunt(NamedTuple):
-    """shunt resistor for current determination"""
-    R: float
-    err: float
-
-
-class Heater(NamedTuple):
-    """metal heater/transducer/thermometer line properties"""
-    length: float
-    width: float
-    dRdT: float
-    dRdT_err: float
-
-
-class Layer(NamedTuple):
-    name: str
-    height: float
-    ky: float
-    ratio_xy: float
-    Cv: float  # heat capacity [J/m^3/K]
-
-    def as_dict(self):
-        return {
-            "name": self.name,
-            "height": self.height,
-            "ky": self.ky,
-            "ratio_xy": self.ratio_xy,
-            "Cv": self.Cv
-        }
+    def as_var_sample(self):
+        return VarSample(self._config_file)
 
 
 class VarSample(Sample):
@@ -173,3 +146,34 @@ class VarSample(Sample):
                 else:
                     raise ValueError("unrecognized attribute name `%s`" % attr_name)
                 return
+
+
+class Shunt(NamedTuple):
+    """shunt resistor for current determination"""
+    R: float
+    err: float
+
+
+class Heater(NamedTuple):
+    """metal heater/transducer/thermometer line properties"""
+    length: float
+    width: float
+    dRdT: float
+    dRdT_err: float
+
+
+class Layer(NamedTuple):
+    name: str
+    height: float
+    ky: float
+    ratio_xy: float
+    Cv: float  # heat capacity [J/m^3/K]
+
+    def as_dict(self):
+        return {
+            "name": self.name,
+            "height": self.height,
+            "ky": self.ky,
+            "ratio_xy": self.ratio_xy,
+            "Cv": self.Cv
+        }
