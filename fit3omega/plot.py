@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.widgets import Slider, Button
 from math import pi as PI
 
 
@@ -167,7 +168,7 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
     return fig
 
 
-def plot_fitted_T2(fit_general, show: bool = False) -> tuple:
+def plot_fitted_T2(m, show: bool = False) -> tuple:
     """plot fitted curves against measured T2 components"""
     _set_mpl_defaults()
     fig, ax = plt.subplots(tight_layout=True)
@@ -178,17 +179,17 @@ def plot_fitted_T2(fit_general, show: bool = False) -> tuple:
     cs = ["blue", "red", "black"]
     ls = ["X", "Y", "R"]
 
-    X = fit_general.omegas / 2 / PI
-    ax.errorbar(X, fit_general.T2.x, fit_general.T2.xerr * fit_general.T2.x,
+    X = m.omegas / 2 / PI
+    ax.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x,
                 linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
-    ax.errorbar(X, fit_general.T2.y, fit_general.T2.yerr * fit_general.T2.y,
+    ax.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y,
                 linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
-    ax.errorbar(X, fit_general.T2.norm(), fit_general.T2.relerr() * fit_general.T2.norm(),
+    ax.errorbar(X, m.T2.norm(), m.T2.relerr() * m.T2.norm(),
                 linewidth=0, elinewidth=1, color=cs[2], label=ls[2])
 
-    ax.plot(X, fit_general.T2_fit.x, markersize=0, color=cs[0])
-    ax.plot(X, fit_general.T2_fit.y, markersize=0, color=cs[1])
-    ax.plot(X, fit_general.T2_fit.norm(), markersize=0, color=cs[2])
+    ax.plot(X, m.T2_fit.x, markersize=0, color=cs[0])
+    ax.plot(X, m.T2_fit.y, markersize=0, color=cs[1])
+    ax.plot(X, m.T2_fit.norm(), markersize=0, color=cs[2])
 
     ax.legend(frameon=False)
 
@@ -243,3 +244,131 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
     if show:
         plt.show()
     return fig
+
+
+class SliderPlot:
+    # TODO: modify non-array params
+    # TODO: some slider customization
+
+    meas_plot_kw = dict(
+        markersize=6,
+        marker='x',
+        markerfacecolor='w',
+        zorder=0,
+        linestyle='None'
+    )
+
+    fit_plot_kw = dict(
+        linestyle='--',
+        linewidth=1,
+        markersize=0
+    )
+
+    # left, bottom, width, height; dimensions normalized (0,1)
+    button_dims = [0.6, 0.1, 0.05, 0.05]
+    button_hovercolor = "0.98"
+
+    text_box_dims = [0.6, 0.15, 0.05, 0.05]
+
+    slider_start_dims = [0.6, 0.9, 0.3, 0.03]
+
+    slider_delta = [0.0, -0.05, 0.0, 0.0]
+
+    error_fmt = "error: {:>10,.6e}"
+
+    def __init__(self, m):
+        self.frac = 0.99
+
+        self.m = m
+        self.fig, self.ax = plt.subplots(figsize=(12, 5))
+        self.fig.subplots_adjust(right=.5)
+        self.sliders = {}
+        self.buttons = {}
+
+    def get_fitline_data(self):
+        heights = self.m.sample.heights
+        kys = self.m.sample.kys
+        ratio_xys = self.m.sample.ratio_xys
+        Cvs = self.m.sample.Cvs
+
+        T2_complex = self.m.T2_func(heights, kys, ratio_xys, Cvs)
+        T2_x = T2_complex.real
+        T2_y = T2_complex.imag
+        T2_norm = abs(T2_complex)
+        err = sum(abs(self.m.T2.x - T2_complex.real))
+        err += sum(abs(self.m.T2.y - T2_complex.imag))
+        return T2_x, T2_y, T2_norm, err / len(T2_x)
+
+    def plot_initial_state(self):
+        _set_mpl_defaults()
+
+        self.ax.set_xscale("log")
+        self.ax.set_ylabel(r"Sample T$_{2\omega}$")
+        self.ax.set_xlabel(r"$2\pi\omega$ [Hz]")
+
+        X = self.m.omegas / 2. / PI
+        cx = 'blue'
+        cy = 'red'
+        cz = 'black'
+
+        # measured data
+        self.ax.plot(X, self.m.T2.x, color=cx, **self.meas_plot_kw)
+        self.ax.plot(X, self.m.T2.y, color=cy, **self.meas_plot_kw)
+        self.ax.plot(X, self.m.T2.norm(), color=cz, **self.meas_plot_kw)
+
+        # fitted data (initial values)
+        fit = self.get_fitline_data()
+        self.ax.plot(X, fit[0], color=cx, **self.fit_plot_kw)
+        self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
+        self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
+        self.ax.text(0.7, 0.95, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
+                     fontsize=8)
+
+        for i, layer in enumerate(self.m.sample.layers):
+            d = layer.as_dict()
+            for k, v in d.items():
+                if type(v) is str and v.endswith('*'):
+                    name = layer.name
+                    label = name + '.' + k
+                    guess_val = float(v.rstrip('*'))
+                    axes = plt.axes(self._get_slider_dims())
+                    self.sliders[label] = Slider(
+                        ax=axes,
+                        label=label,
+                        valmin=(1 - self.frac) * guess_val,
+                        valmax=(1 + self.frac) * guess_val,
+                        valinit=guess_val,
+                        valfmt="%.2e"
+                    )
+                    self.sliders[label].on_changed(self._update_sliders)
+
+        reset_button_dims = self._get_slider_dims()
+        reset_button_dims[2:] = [0.05, 0.05]
+        reset_button_dims[1] -= 0.025
+        self.buttons["Reset"] = Button(plt.axes(reset_button_dims), "Reset",
+                                       hovercolor=self.button_hovercolor)
+        self.buttons["Reset"].on_clicked(self._reset_sliders)
+
+    def _update_sliders(self, _):
+        for label, slider in self.sliders.items():
+            layer_name, attr_name = label.split('.')
+            self.m.sample.param_modify(layer_name, attr_name + 's', slider.val)
+        fit = self.get_fitline_data()
+        self.ax.lines[3].set_ydata(fit[0])
+        self.ax.lines[4].set_ydata(fit[1])
+        self.ax.lines[5].set_ydata(fit[2])
+        self.ax.texts[0].set_text(self.error_fmt.format(fit[3]))
+        self.fig.canvas.draw_idle()
+        print(fit[3])
+
+    def _reset_sliders(self, _):
+        for label in self.sliders:
+            self.sliders[label].reset()
+        self.m.sample.reset_params()
+
+    def _get_slider_dims(self):
+        dims = []
+        n = len(self.sliders)
+        for x, d in zip(self.slider_start_dims, self.slider_delta):
+            dims.append(x + n * d)
+        return dims
