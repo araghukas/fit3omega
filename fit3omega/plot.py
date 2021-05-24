@@ -275,6 +275,7 @@ class SliderPlot:
     slider_delta = [0.0, -0.05, 0.0, 0.0]
 
     error_fmt = "error: {:<10,.6e}"
+    error_green_thresh = 0.05
 
     def __init__(self, m):
         mpl.rc("font", family="monospace")
@@ -299,9 +300,8 @@ class SliderPlot:
         T2_x = T2_complex.real
         T2_y = T2_complex.imag
         T2_norm = abs(T2_complex)
-        err = sum(abs(self.m.T2.x - T2_complex.real))
-        err += sum(abs(self.m.T2.y - T2_complex.imag))
-        return T2_x, T2_y, T2_norm, err / len(T2_x)
+        err = sum(abs(self.m.T2.x - T2_complex.real)) + sum(abs(self.m.T2.y - T2_complex.imag))
+        return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
 
     def plot_initial_state(self):
         _set_mpl_defaults()
@@ -325,8 +325,6 @@ class SliderPlot:
         self.ax.plot(X, fit[0], color=cx, **self.fit_plot_kw)
         self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
         self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
-        self.ax.text(0.7, 1.05, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
-                     fontsize=8, color=self._get_error_color(fit[3]), fontweight="bold")
 
         # prepare the sliders
         for i, layer in enumerate(self.m.sample.layers):
@@ -362,6 +360,9 @@ class SliderPlot:
                                          hovercolor=self.button_hovercolor)
         self.buttons["x-scale"].on_clicked(self._toggle_xscale)
 
+        self.ax.text(0.0, 1.025, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
+                     fontsize=10, color=self._get_error_color(fit[3]), fontweight="bold")
+
     def _update_sliders(self, _):
         for label, slider in self.sliders.items():
             layer_name, attr_name = label.split('.')
@@ -396,14 +397,13 @@ class SliderPlot:
             dims.append(x + n * d)
         return dims
 
-    @staticmethod
-    def _get_error_color(err):
+    def _get_error_color(self, err):
+        t = self.error_green_thresh
         if err > 1.0:
             return 1.0, 0.0, 0.0
-        elif 0.1 < err < 1.0:
-            return (err - 0.1), 0.0, 0.0
-        elif 0.0 <= err <= 0.1:
-            return 0.0, (0.1 - err) / 0.1, 0.0
+        elif t < err < 1.0:
+            return (err - t), 0.0, 0.0
+        elif 0.0 <= err <= t:
+            return 0.0, (t - err) / t, 0.0
         else:
             return 0.0, 0.0, 0.0
-
