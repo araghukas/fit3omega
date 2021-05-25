@@ -45,7 +45,7 @@ class Stepper:
 class BasicPrinterCallBack:
     MIN_F_THRESH = 1e-6
 
-    def __init__(self, i_max):
+    def __init__(self, i_max, silent=False):
         if i_max <= 0:
             raise ValueError("non-positive value for i_max")
         self.i_max = i_max
@@ -83,10 +83,10 @@ class FitGeneralResult:
     W = 10
     SEP = "\t"
 
-    def __init__(self, sample, _guesses, _result, _ids):
+    def __init__(self, sample, _guesses, x, _ids):
         self.sample = sample
         self.guesses = _guesses
-        self.result = _result
+        self.x = x
         self.ids = _ids
 
         self._row = ["{:>%d}" % self.W] + (  # layer name
@@ -105,8 +105,8 @@ class FitGeneralResult:
 
         for j, id_pair in enumerate(self.ids):
             i_arg, i_layer = id_pair
-            vals[i_layer][i_arg] = self.result[j]
-            errs[i_layer][i_arg] = (self.result[j] - self.guesses[j]) / self.guesses[j]
+            vals[i_layer][i_arg] = self.x[j]
+            errs[i_layer][i_arg] = (self.x[j] - self.guesses[j]) / self.guesses[j]
 
         blank = self.SEP.join(self._row)
         h_blank = self.SEP.join(self._header)
@@ -170,11 +170,15 @@ class FitGeneral(Model):
 
         self._intg_set = False
         self._result = None
-        self._fitted_kwargs = None
+        self._fitted_kwargs = {}
         self._error = None
 
         # C-extension integrator module
         self.intg = __import__('intg')
+
+    @property
+    def fitted_kwargs(self):
+        return self._fitted_kwargs.copy()
 
     @property
     def T2_fit(self):

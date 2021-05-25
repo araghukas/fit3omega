@@ -125,6 +125,19 @@ class VarSample(Sample):
             raise ValueError("array length incompatible with sample config")
 
     def param_modify(self, layer_name: str, attr_name: str, new_value: float) -> None:
+        if layer_name is None:
+            if attr_name == "heights":
+                self.heights = new_value
+            elif attr_name == "kys":
+                self.kys = new_value
+            elif attr_name == "ratio_xys":
+                self.ratio_xys = new_value
+            elif attr_name == "Cvs":
+                self.Cvs = new_value
+            else:
+                raise ValueError("unrecognized attribute name `%s`" % attr_name)
+            return
+
         for i, layer in enumerate(self.layers):
             if layer.name == layer_name:
                 if attr_name == "heights":

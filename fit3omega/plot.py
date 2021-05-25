@@ -247,6 +247,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
 
 class SliderPlot:
+    # TODO: export fit result as dict of new params
     # TODO: modify non-array params
     # TODO: some slider customization
 
@@ -270,7 +271,7 @@ class SliderPlot:
 
     text_box_dims = [0.6, 0.15, 0.05, 0.05]
 
-    slider_start_dims = [0.6, 0.9, 0.3, 0.03]
+    slider_start_dims = [0.6, 0.8, 0.3, 0.03]
 
     slider_delta = [0.0, -0.05, 0.0, 0.0]
 
@@ -284,23 +285,24 @@ class SliderPlot:
 
         m.sample = m.sample.as_var_sample()
 
-        self.m = m
+        self.model = m
         self.fig, self.ax = plt.subplots(figsize=(12, 5))
         self.fig.subplots_adjust(right=.5)
         self.sliders = {}
         self.buttons = {}
 
     def get_fitline_data(self):
-        heights = self.m.sample.heights
-        kys = self.m.sample.kys
-        ratio_xys = self.m.sample.ratio_xys
-        Cvs = self.m.sample.Cvs
+        heights = self.model.sample.heights
+        kys = self.model.sample.kys
+        ratio_xys = self.model.sample.ratio_xys
+        Cvs = self.model.sample.Cvs
 
-        T2_complex = self.m.T2_func(heights, kys, ratio_xys, Cvs)
+        T2_complex = self.model.T2_func(heights, kys, ratio_xys, Cvs)
         T2_x = T2_complex.real
         T2_y = T2_complex.imag
         T2_norm = abs(T2_complex)
-        err = sum(abs(self.m.T2.x - T2_complex.real)) + sum(abs(self.m.T2.y - T2_complex.imag))
+        err = (sum(abs(self.model.T2.x - T2_complex.real))
+               + sum(abs(self.model.T2.y - T2_complex.imag)))
         return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
 
     def plot_initial_state(self):
@@ -310,15 +312,15 @@ class SliderPlot:
         self.ax.set_ylabel(r"Sample T$_{2\omega}$")
         self.ax.set_xlabel(r"$2\pi\omega$ [Hz]")
 
-        X = self.m.omegas / 2. / PI
+        X = self.model.omegas / 2. / PI
         cx = 'blue'
         cy = 'red'
         cz = 'black'
 
         # measured data
-        self.ax.plot(X, self.m.T2.x, color=cx, **self.meas_plot_kw)
-        self.ax.plot(X, self.m.T2.y, color=cy, **self.meas_plot_kw)
-        self.ax.plot(X, self.m.T2.norm(), color=cz, **self.meas_plot_kw)
+        self.ax.plot(X, self.model.T2.x, color=cx, **self.meas_plot_kw)
+        self.ax.plot(X, self.model.T2.y, color=cy, **self.meas_plot_kw)
+        self.ax.plot(X, self.model.T2.norm(), color=cz, **self.meas_plot_kw)
 
         # fitted data (initial values)
         fit = self.get_fitline_data()
@@ -327,7 +329,7 @@ class SliderPlot:
         self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
 
         # prepare the sliders
-        for i, layer in enumerate(self.m.sample.layers):
+        for i, layer in enumerate(self.model.sample.layers):
             d = layer.as_dict()
             for k, v in d.items():
                 if type(v) is str and v.endswith('*'):
@@ -343,7 +345,7 @@ class SliderPlot:
                         valinit=guess_val,
                         valfmt="%.2e"
                     )
-                    self.sliders[label].on_changed(self._update_sliders)
+                    self.sliders[label].on_changed(self._apply_sliders)
 
         # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
@@ -360,13 +362,24 @@ class SliderPlot:
                                          hovercolor=self.button_hovercolor)
         self.buttons["x-scale"].on_clicked(self._toggle_xscale)
 
+        # fit button
+        fit_button_dims = xscale_button_dims
+        fit_button_dims[0] += 0.055
+        fit_button_dims[2] += 0.005
+        self.buttons["Fit"] = Button(plt.axes(fit_button_dims), "Fit",
+                                     hovercolor=self.button_hovercolor)
+        self.buttons["Fit"].on_clicked(self._run_fit_and_update)
+
         self.ax.text(0.0, 1.025, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
                      fontsize=10, color=self._get_error_color(fit[3]), fontweight="bold")
 
-    def _update_sliders(self, _):
+    def _apply_sliders(self, _):
         for label, slider in self.sliders.items():
             layer_name, attr_name = label.split('.')
-            self.m.sample.param_modify(layer_name, attr_name + 's', slider.val)
+            self.model.sample.param_modify(layer_name, attr_name + 's', slider.val)
+        self._update_graph()
+
+    def _update_graph(self):
         fit = self.get_fitline_data()
         self.ax.lines[3].set_ydata(fit[0])
         self.ax.lines[4].set_ydata(fit[1])
@@ -378,7 +391,7 @@ class SliderPlot:
     def _reset_sliders(self, _):
         for label in self.sliders:
             self.sliders[label].reset()
-        self.m.sample.reset_params()
+        self.model.sample.reset_params()
 
     def _toggle_xscale(self, _):
         if self._x_scale == "log(x)":
@@ -407,3 +420,32 @@ class SliderPlot:
             return 0.0, (t - err) / t, 0.0
         else:
             return 0.0, 0.0, 0.0
+
+    def _run_fit_and_update(self, _):
+        self.model.fit(frac=self.frac)
+        for attr_name, values in self.model.fitted_kwargs.items():
+            self.model.sample.param_modify(None, attr_name, values)
+        self._update_graph()
+
+        for label, slider in self.sliders.items():
+            layer_name, attr_name = label.split('.')
+            for i, layer in enumerate(self.model.sample.layers):
+                if layer.name == layer_name:
+                    slider.set_val(self.model.fitted_kwargs[attr_name + "s"][i])
+                    break
+
+
+if __name__ == "__main__":
+    from fit3omega.sample import Sample
+    from fit3omega.fit_general import FitGeneral
+
+    SMPL2 = "/Users/araghukasyan/Dropbox/BCB_4/BCB_4_alt.f3oc"
+    DATA = "/Users/araghukasyan/Dropbox/BCB_4/May19_2021_m3/tc3omega_data_2.8_V.csv"
+
+    smpl = Sample(SMPL2)
+    f = FitGeneral(smpl, DATA, 's')
+    f.set_data_limits(0, 18)
+
+    sp = SliderPlot(f)
+    sp.plot_initial_state()
+    plt.show()
