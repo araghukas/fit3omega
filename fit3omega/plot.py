@@ -248,6 +248,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
 class SliderPlot:
     # TODO: modify non-array params
+    # TODO: add command-line access to __main__.py
 
     meas_plot_kw = dict(
         markersize=6,
@@ -280,7 +281,7 @@ class SliderPlot:
         m.sample = m.sample.as_var_sample()
 
         self.model = m
-        self.fig, self.ax = plt.subplots(figsize=(6, 8))
+        self.fig, self.ax = plt.subplots(figsize=(6, 7))
         self.fig.subplots_adjust(bottom=.5)
         self.sliders = {}
         self.buttons = {}
