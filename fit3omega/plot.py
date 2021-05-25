@@ -39,7 +39,7 @@ def plot_measured_data(m, show: bool = False) -> plt.Figure:
     ax_V3.set_ylabel(r"Sample V$_{3\omega}$")
     ax_V3.set_xlabel(r"Source Frequency [Hz]")
 
-    ax_T2.set_ylabel(r"Sample T$_{2\omega}$")
+    ax_T2.set_ylabel(r"Sample $\widebar{T}_{2\omega}$")
     ax_T2.set_xlabel(r"Source Frequency [Hz]")
 
     cx = 'blue'
@@ -102,7 +102,7 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
     ax_V3.set_ylabel(r"Sample V$_{3\omega}$")
     ax_V3.set_xlabel(r"Source Frequency [Hz]")
 
-    ax_T2.set_ylabel(r"Sample T$_{2\omega}$")
+    ax_T2.set_ylabel(r"Sample $\widebar{T}_{2\omega}$")
     ax_T2.set_xlabel(r"Source Frequency [Hz]")
 
     X2 = m1.omegas / 2 / PI
@@ -267,44 +267,31 @@ class SliderPlot:
     # left, bottom, width, height; dimensions normalized (0,1)
     button_hovercolor = "0.98"
 
-    slider_start_dims = [0.2, 0.4, 0.6, 0.01]
+    slider_start_dims = [0.2, 0.28, 0.6, 0.01]
     slider_delta = [0.0, -0.035, 0.0, 0.0]
 
     error_fmt = "error: {:<10,.6e}"
     error_green_thresh = 0.05
 
-    def __init__(self, m):
+    def __init__(self, m, frac=0.99, niter=None):
         mpl.rc("font", family="monospace")
-        self.frac = 0.99
-        self._x_scale = "log(x)"
-
+        self.frac = frac
+        self.niter = niter
         m.sample = m.sample.as_var_sample()
 
         self.model = m
-        self.fig, self.ax = plt.subplots(figsize=(6, 7))
-        self.fig.subplots_adjust(bottom=.5)
+        self.fig, self.ax = plt.subplots(figsize=(6, 8))
+        self.fig.subplots_adjust(bottom=.4, top=0.95)
         self.sliders = {}
         self.buttons = {}
 
-    def get_fitline_data(self):
-        heights = self.model.sample.heights
-        kys = self.model.sample.kys
-        ratio_xys = self.model.sample.ratio_xys
-        Cvs = self.model.sample.Cvs
-
-        T2_complex = self.model.T2_func(heights, kys, ratio_xys, Cvs)
-        T2_x = T2_complex.real
-        T2_y = T2_complex.imag
-        T2_norm = abs(T2_complex)
-        err = (sum(abs(self.model.T2.x - T2_complex.real))
-               + sum(abs(self.model.T2.y - T2_complex.imag)))
-        return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
+        self._x_scale = "log(x)"
 
     def plot_initial_state(self):
         _set_mpl_defaults()
 
         self.ax.set_xscale("log")
-        self.ax.set_ylabel(r"Sample T$_{2\omega}$")
+        self.ax.set_ylabel(r"Sample $\widebar{T}_{2\omega}$")
         self.ax.set_xlabel(r"$2\pi\omega$ [Hz]")
 
         X = self.model.omegas / 2. / PI
@@ -367,6 +354,21 @@ class SliderPlot:
 
         self.ax.text(0.0, 1.025, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
                      fontsize=10, color=self._get_error_color(fit[3]), fontweight="bold")
+        plt.show()
+
+    def get_fitline_data(self):
+        heights = self.model.sample.heights
+        kys = self.model.sample.kys
+        ratio_xys = self.model.sample.ratio_xys
+        Cvs = self.model.sample.Cvs
+
+        T2_complex = self.model.T2_func(heights, kys, ratio_xys, Cvs)
+        T2_x = T2_complex.real
+        T2_y = T2_complex.imag
+        T2_norm = abs(T2_complex)
+        err = (sum(abs(self.model.T2.x - T2_complex.real))
+               + sum(abs(self.model.T2.y - T2_complex.imag)))
+        return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
 
     def _apply_sliders(self, _):
         for label, slider in self.sliders.items():
@@ -417,6 +419,21 @@ class SliderPlot:
             return 0.0, 0.0, 0.0
 
     def _run_fit_and_update(self, _):
+        niter = self._get_niter_estimate() if self.niter is None else self.niter
+        self.model.fit(frac=self.frac, niter=niter)
+        for attr_name, values in self.model.fitted_kwargs.items():
+            self.model.sample.param_modify(None, attr_name, values)
+        self._update_graph()
+        print("--> Result:\n", self.model.result, "\n")
+
+        for label, slider in self.sliders.items():
+            layer_name, attr_name = label.split('.')
+            for i, layer in enumerate(self.model.sample.layers):
+                if layer.name == layer_name:
+                    slider.set_val(self.model.fitted_kwargs[attr_name + "s"][i])
+                    break
+
+    def _get_niter_estimate(self):
         n = 0
         for layer in self.model.sample.layers:
             d = layer.as_dict()
@@ -426,16 +443,4 @@ class SliderPlot:
                     n += 1
 
         n = 4 if n >= 4 else n
-        niter = 30 * 3**(4 - n)
-
-        self.model.fit(frac=self.frac, niter=niter)
-        for attr_name, values in self.model.fitted_kwargs.items():
-            self.model.sample.param_modify(None, attr_name, values)
-        self._update_graph()
-
-        for label, slider in self.sliders.items():
-            layer_name, attr_name = label.split('.')
-            for i, layer in enumerate(self.model.sample.layers):
-                if layer.name == layer_name:
-                    slider.set_val(self.model.fitted_kwargs[attr_name + "s"][i])
-                    break
+        return 30 * 5**(4 - n)

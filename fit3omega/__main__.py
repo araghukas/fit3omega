@@ -270,6 +270,7 @@ def _plot_compare_data(sample, data1, data2, label, show=True):
 
 def _fit_data(sample, data, frac, niter, data_lims, b_type, label, show=True):
     from .fit_general import FitGeneral
+    niter = 30 if niter is None else niter
     fg = FitGeneral(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
@@ -282,6 +283,21 @@ def _fit_data(sample, data, frac, niter, data_lims, b_type, label, show=True):
     fig, ax = fg.plot_fit(show=show)
     save_name = os.path.abspath(data).rstrip(".csv") + label + "_fit.pdf"
     fig.savefig(save_name)
+    print("==> fit3omega: saved plot as %s" % save_name)
+    exit(0)
+
+
+def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, label):
+    from .fit_general import FitGeneral
+    from .plot import SliderPlot
+    fg = FitGeneral(sample, data, b_type)
+    start, end = (0, len(fg.data)) if data_lims is None else data_lims
+    fg.set_data_limits(start, end)
+
+    sp = SliderPlot(fg, frac=frac, niter=niter)
+    sp.plot_initial_state()
+    save_name = os.path.abspath(data).rstrip(".csv") + label + "_slider_fit.pdf"
+    sp.fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
 
@@ -317,13 +333,17 @@ if __name__ == "__main__":
                         help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
+    parser.add_argument("-slider_plot",
+                        help="create a responsive plot where fit parameters are adjustable",
+                        nargs=2, type=str, default=None)
+
     parser.add_argument("-frac",
                         help="perturbation fraction in interval (0,1)",
                         type=float, default=1.0)
 
     parser.add_argument("-niter",
                         help="number of basinhopping iterations",
-                        type=int, default=30)
+                        type=int, default=None)
 
     parser.add_argument("-data_lims",
                         help="indices of first and last data points",
@@ -357,6 +377,13 @@ if __name__ == "__main__":
                   show=args.show,
                   b_type=args.b_type,
                   label=args.label)
+    elif args.slider_plot:
+        _launch_slider_plot(*args.slider_plot,
+                            frac=args.frac,
+                            niter=args.niter,
+                            data_lims=args.data_lims,
+                            b_type=args.b_type,
+                            label=args.label)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)
