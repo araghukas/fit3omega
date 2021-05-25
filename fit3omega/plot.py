@@ -247,9 +247,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
 
 class SliderPlot:
-    # TODO: export fit result as dict of new params
     # TODO: modify non-array params
-    # TODO: some slider customization
 
     meas_plot_kw = dict(
         markersize=6,
@@ -266,14 +264,10 @@ class SliderPlot:
     )
 
     # left, bottom, width, height; dimensions normalized (0,1)
-    button_dims = [0.6, 0.1, 0.05, 0.05]
     button_hovercolor = "0.98"
 
-    text_box_dims = [0.6, 0.15, 0.05, 0.05]
-
-    slider_start_dims = [0.6, 0.8, 0.3, 0.03]
-
-    slider_delta = [0.0, -0.05, 0.0, 0.0]
+    slider_start_dims = [0.2, 0.4, 0.6, 0.01]
+    slider_delta = [0.0, -0.035, 0.0, 0.0]
 
     error_fmt = "error: {:<10,.6e}"
     error_green_thresh = 0.05
@@ -286,8 +280,8 @@ class SliderPlot:
         m.sample = m.sample.as_var_sample()
 
         self.model = m
-        self.fig, self.ax = plt.subplots(figsize=(12, 5))
-        self.fig.subplots_adjust(right=.5)
+        self.fig, self.ax = plt.subplots(figsize=(6, 8))
+        self.fig.subplots_adjust(bottom=.5)
         self.sliders = {}
         self.buttons = {}
 
@@ -349,22 +343,22 @@ class SliderPlot:
 
         # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
-        reset_button_dims[2:] = [0.05, 0.05]
-        reset_button_dims[1] -= 0.025
+        reset_button_dims[2:] = [0.1, 0.03]
+        reset_button_dims[1] -= 0.035
         self.buttons["Reset"] = Button(plt.axes(reset_button_dims), "Reset",
                                        hovercolor=self.button_hovercolor)
         self.buttons["Reset"].on_clicked(self._reset_sliders)
 
         # sloppy x-scale toggle creation
         xscale_button_dims = reset_button_dims
-        xscale_button_dims[0] += 0.055
+        xscale_button_dims[0] += 0.12
         self.buttons["x-scale"] = Button(plt.axes(xscale_button_dims), self._x_scale,
                                          hovercolor=self.button_hovercolor)
         self.buttons["x-scale"].on_clicked(self._toggle_xscale)
 
         # fit button
         fit_button_dims = xscale_button_dims
-        fit_button_dims[0] += 0.055
+        fit_button_dims[0] += 0.12
         fit_button_dims[2] += 0.005
         self.buttons["Fit"] = Button(plt.axes(fit_button_dims), "Fit",
                                      hovercolor=self.button_hovercolor)
@@ -422,7 +416,18 @@ class SliderPlot:
             return 0.0, 0.0, 0.0
 
     def _run_fit_and_update(self, _):
-        self.model.fit(frac=self.frac)
+        n = 0
+        for layer in self.model.sample.layers:
+            d = layer.as_dict()
+            for k in d:
+                v = d[k]
+                if type(v) is str and v.endswith('*'):
+                    n += 1
+
+        n = 4 if n >= 4 else n
+        niter = 30 * 3**(4 - n)
+
+        self.model.fit(frac=self.frac, niter=niter)
         for attr_name, values in self.model.fitted_kwargs.items():
             self.model.sample.param_modify(None, attr_name, values)
         self._update_graph()
@@ -433,19 +438,3 @@ class SliderPlot:
                 if layer.name == layer_name:
                     slider.set_val(self.model.fitted_kwargs[attr_name + "s"][i])
                     break
-
-
-if __name__ == "__main__":
-    from fit3omega.sample import Sample
-    from fit3omega.fit_general import FitGeneral
-
-    SMPL2 = "/Users/araghukasyan/Dropbox/BCB_4/BCB_4_alt.f3oc"
-    DATA = "/Users/araghukasyan/Dropbox/BCB_4/May19_2021_m3/tc3omega_data_2.8_V.csv"
-
-    smpl = Sample(SMPL2)
-    f = FitGeneral(smpl, DATA, 's')
-    f.set_data_limits(0, 18)
-
-    sp = SliderPlot(f)
-    sp.plot_initial_state()
-    plt.show()
