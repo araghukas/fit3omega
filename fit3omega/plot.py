@@ -248,7 +248,6 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
 class SliderPlot:
     # TODO: modify non-array params
-    # TODO: add command-line access to __main__.py
 
     meas_plot_kw = dict(
         markersize=6,
