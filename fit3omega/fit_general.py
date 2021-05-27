@@ -135,7 +135,6 @@ class FitGeneralResult:
 
 
 class FitGeneral(Model):
-    DEFAULT_GUESS = 100.0
     BOUNDARY_TYPES = ['s', 'i', 'a']
     FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
 
@@ -193,7 +192,6 @@ class FitGeneral(Model):
 
     @property
     def result(self):
-        """fitted kwargs for `T2_func` method"""
         return self._result
 
     @property

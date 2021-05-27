@@ -199,6 +199,37 @@ def plot_fitted_T2(m, show: bool = False) -> tuple:
     return fig, ax
 
 
+def plot_fitted_T2_linear(m, show: bool = False) -> tuple:
+    """plot fitted curves against measured T2 components"""
+    _set_mpl_defaults()
+    fig, ax = plt.subplots(tight_layout=True)
+
+    ax.set_xlabel(r"Source Frequency [Hz]")
+    ax.set_ylabel(r"$T_{2\omega,rms}$ [K]")
+
+    cs = ["blue", "red", "black"]
+    ls = ["X", "Y", "R"]
+
+    X = m.omegas / 2. / PI
+    ax.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x,
+                linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
+    ax.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y,
+                linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
+    ax.errorbar(X, m.T2.norm(), m.T2.relerr() * m.T2.norm(),
+                linewidth=0, elinewidth=1, color=cs[2], label=ls[2])
+
+    X_linear = m.omegas_linear / 2. / PI
+    ax.plot(X_linear, m.T2_fit.x, markersize=0, linewidth=2, color="cyan")
+    ax.plot(X_linear, m.T2_fit.y, markersize=0, linewidth=2, color="fuchsia")
+
+    ax.legend(frameon=False)
+
+    ax.set_xscale('log')
+    if show:
+        plt.show()
+    return fig, ax
+
+
 def plot_diagnostics(m, show: bool = False) -> plt.Figure:
     _set_mpl_defaults()
     """plot V3/I^3 and power from measured data"""
