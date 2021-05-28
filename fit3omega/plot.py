@@ -278,8 +278,6 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
 
 class SliderPlot:
-    # TODO: modify non-array params
-
     meas_plot_kw = dict(
         markersize=6,
         marker='x',
@@ -297,8 +295,9 @@ class SliderPlot:
     # left, bottom, width, height; dimensions normalized (0,1)
     button_hovercolor = "0.98"
 
-    slider_start_dims = [0.2, 0.28, 0.6, 0.01]
+    slider_start_dims = [0.2, 0.38, 0.6, 0.01]
     slider_delta = [0.0, -0.035, 0.0, 0.0]
+    slider_valfmt = "%.2e"
 
     error_fmt = "error: {:<10,.6e}"
     error_green_thresh = 0.05
@@ -310,12 +309,15 @@ class SliderPlot:
         m.sample = m.sample.as_var_sample()
 
         self.model = m
+        self.model.set_refresh(True)
         self.fig, self.ax = plt.subplots(figsize=(6, 8))
-        self.fig.subplots_adjust(bottom=.4, top=0.95)
-        self.sliders = {}
+        self.fig.subplots_adjust(bottom=.5, top=0.95)
+        self.param_sliders = {}
+        self.sample_sliders = {}
         self.buttons = {}
 
         self._x_scale = "log(x)"
+        self._n_sliders = 0
 
     def plot_initial_state(self):
         _set_mpl_defaults()
@@ -340,7 +342,7 @@ class SliderPlot:
         self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
         self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
 
-        # prepare the sliders
+        # prepare the fit parameters sliders
         for i, layer in enumerate(self.model.sample.layers):
             d = layer.as_dict()
             for k, v in d.items():
@@ -349,15 +351,34 @@ class SliderPlot:
                     label = name + '.' + k
                     guess_val = float(v.rstrip('*'))
                     axes = plt.axes(self._get_slider_dims())
-                    self.sliders[label] = Slider(
+                    self.param_sliders[label] = Slider(
                         ax=axes,
                         label=label.replace('.', ' '),
                         valmin=(1 - self.frac) * guess_val,
                         valmax=(1 + self.frac) * guess_val,
                         valinit=guess_val,
-                        valfmt="%.2e"
+                        valfmt=self.slider_valfmt
                     )
-                    self.sliders[label].on_changed(self._apply_sliders)
+                    self.param_sliders[label].on_changed(self._apply_sliders)
+                    self._n_sliders += 1
+
+        # prepare setup parameter sliders (Rsh, dRdT, length, width)
+        sample_params = dict(
+            dRdT=self.model.sample.heater.dRdT,
+            width=self.model.sample.heater.width,
+            length=self.model.sample.heater.length
+        )
+        for k, v in sample_params.items():
+            self.sample_sliders[k] = Slider(
+                ax=plt.axes(self._get_slider_dims()),
+                label=k,
+                valmin=(1 - self.frac) * v,
+                valmax=(1 + self.frac) * v,
+                valinit=v,
+                valfmt=self.slider_valfmt
+            )
+            self.sample_sliders[k].on_changed(self._apply_sliders)
+            self._n_sliders += 1
 
         # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
@@ -401,13 +422,18 @@ class SliderPlot:
         return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
 
     def _apply_sliders(self, _):
-        for label, slider in self.sliders.items():
+        for label, slider in self.param_sliders.items():
             layer_name, attr_name = label.split('.')
             self.model.sample.param_modify(layer_name, attr_name + 's', slider.val)
+        for label, slider in self.sample_sliders.items():
+            self.model.sample.heater.modify(label, slider.val)
         self._update_graph()
 
     def _update_graph(self):
         fit = self.get_fitline_data()
+        self.ax.lines[0].set_ydata(self.model.T2.x)
+        self.ax.lines[1].set_ydata(self.model.T2.y)
+        self.ax.lines[2].set_ydata(self.model.T2.norm())
         self.ax.lines[3].set_ydata(fit[0])
         self.ax.lines[4].set_ydata(fit[1])
         self.ax.lines[5].set_ydata(fit[2])
@@ -416,9 +442,12 @@ class SliderPlot:
         self.fig.canvas.draw_idle()
 
     def _reset_sliders(self, _):
-        for label in self.sliders:
-            self.sliders[label].reset()
+        for label in self.param_sliders:
+            self.param_sliders[label].reset()
+        for label in self.sample_sliders:
+            self.sample_sliders[label].reset()
         self.model.sample.reset_params()
+        self.model.heater.reset()
 
     def _toggle_xscale(self, _):
         if self._x_scale == "log(x)":
@@ -432,7 +461,7 @@ class SliderPlot:
 
     def _get_slider_dims(self):
         dims = []
-        n = len(self.sliders)
+        n = self._n_sliders
         for x, d in zip(self.slider_start_dims, self.slider_delta):
             dims.append(x + n * d)
         return dims
@@ -456,7 +485,7 @@ class SliderPlot:
         self._update_graph()
         print("--> Result:\n", self.model.result, "\n")
 
-        for label, slider in self.sliders.items():
+        for label, slider in self.param_sliders.items():
             layer_name, attr_name = label.split('.')
             for i, layer in enumerate(self.model.sample.layers):
                 if layer.name == layer_name:
@@ -464,13 +493,15 @@ class SliderPlot:
                     break
 
     def _get_niter_estimate(self):
-        n = 0
+        n = 0  # number of fit parameters
         for layer in self.model.sample.layers:
             d = layer.as_dict()
             for k in d:
                 v = d[k]
                 if type(v) is str and v.endswith('*'):
                     n += 1
+        if n == 0:
+            return 0
 
         n = 4 if n >= 4 else n
-        return 30 * 5**(4 - n)
+        return 10 * 2**(4 - n)

@@ -67,6 +67,24 @@ class VarSample(Sample):
         self._Cvs = None
         self.reset_params()
 
+    def load_config(self, config_file):
+        with open(config_file, 'r') as f:
+            d = yaml.safe_load(f)
+        for k, v in d.items():
+            if k == "shunt":
+                self.shunt = Shunt(**v)
+            elif k == "heater":
+                self.heater = Heater(**v)
+            elif k == "layers":
+                for _, layer_dict in v.items():
+                    try:
+                        self.layers.append(Layer(**layer_dict))
+                    except TypeError as te:
+                        raise ValueError("unknown sample property '%s'"
+                                         % str(te).split(' ')[-1].strip("'"))
+            else:
+                raise ValueError("unknown configuration key '%s'" % k)
+
     def reset_params(self):
         self._heights = [self._parse_item(layer.height) for layer in self.layers]
         self._kys = [self._parse_item(layer.ky) for layer in self.layers]
@@ -161,18 +179,31 @@ class VarSample(Sample):
                 return
 
 
+class Heater:
+    """metal heater/transducer/thermometer line properties"""
+
+    def __init__(self, length: float, width: float, dRdT: float, dRdT_err: float):
+        self.length = self._length = length
+        self.width = self._width = width
+        self.dRdT = self._dRdT = dRdT
+        self.dRdT_err = dRdT_err
+
+    def reset(self):
+        self.dRdT = self._dRdT
+        self.width = self._width
+        self.length = self._length
+
+    def modify(self, attr_name, new_value):
+        if not attr_name.startswith("_"):
+            try:
+                self.__setattr__(attr_name, new_value)
+            except KeyError:
+                pass
+
+
 class Shunt(NamedTuple):
-    """shunt resistor for current determination"""
     R: float
     err: float
-
-
-class Heater(NamedTuple):
-    """metal heater/transducer/thermometer line properties"""
-    length: float
-    width: float
-    dRdT: float
-    dRdT_err: float
 
 
 class Layer(NamedTuple):

@@ -218,7 +218,7 @@ class FitGeneral(Model):
 
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
         """T2 prediction from physical model and provided properties"""
-        if not self._intg_set:
+        if not self._intg_set or self._refresh_dependents:
             self._set_intg()
 
         # extra divisor of ROOT2 since measured T2 amplitudes are RMS
