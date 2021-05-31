@@ -239,7 +239,7 @@ def _plot_data(sample, data, label, show=True):
     from .model import Model
     m = Model(sample, data)
     fig = m.plot_data(show=show)
-    save_name = os.path.abspath(data).strip(".csv") + label + "_plot.pdf"
+    save_name = os.path.abspath(data).strip(".csv") + '_' + label + "_plot.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
@@ -250,7 +250,7 @@ def _plot_diagnostics(sample, data, label, show=True):
     from .plot import plot_diagnostics
     m = Model(sample, data)
     fig = plot_diagnostics(m, show)
-    save_name = os.path.abspath(data).strip(".csv") + label + "_diagnostic.pdf"
+    save_name = os.path.abspath(data).strip(".csv") + '_' + label + "_diagnostic.pdf"
     fig.savefig(save_name)
     print("==> fig3omega: saved plot as %s" % save_name)
     exit(0)
@@ -262,7 +262,7 @@ def _plot_compare_data(sample, data1, data2, label, show=True):
     m1 = Model(sample, data1)
     m2 = Model(sample, data2)
     fig = plot_compare_measured_data(m1, m2, show)
-    save_name = os.path.abspath(data1).strip(".csv") + label + "_compare_plot.pdf"
+    save_name = os.path.abspath(data1).strip(".csv") + '_' + label + "_compare_plot.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
@@ -283,7 +283,7 @@ def _fit_data_general_model(sample, data, frac, niter, data_lims, b_type, label,
     print()
 
     fig, ax = fg.plot_fit(show=show)
-    save_name = os.path.abspath(data).rstrip(".csv") + label + "_fit.pdf"
+    save_name = os.path.abspath(data).rstrip(".csv") + '_' + label + "_fit.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
@@ -304,7 +304,7 @@ def _fit_data_linear_model(sample, data, data_lims, label, thresh, min_length, s
     print()
 
     fig, ax = fl.plot_fit(show)
-    save_name = os.path.abspath(data).rstrip(".csv") + label + "_fit.pdf"
+    save_name = os.path.abspath(data).rstrip(".csv") + '_' + label + "_fit.pdf"
     fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
@@ -319,7 +319,7 @@ def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, label, ehp
 
     sp = SliderPlot(fg, frac=frac, niter=niter, enable_heater_params=ehp)
     sp.plot_initial_state()
-    save_name = os.path.abspath(data).rstrip(".csv") + label + "_slider_fit.pdf"
+    save_name = os.path.abspath(data).rstrip(".csv") + '_' + label + "_slider_fit.pdf"
     sp.fig.savefig(save_name)
     print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
