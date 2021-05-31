@@ -310,14 +310,14 @@ def _fit_data_linear_model(sample, data, data_lims, label, thresh, min_length, s
     exit(0)
 
 
-def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, label):
+def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, label, ehp):
     from .fit_general import FitGeneral
     from .plot import SliderPlot
     fg = FitGeneral(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
 
-    sp = SliderPlot(fg, frac=frac, niter=niter)
+    sp = SliderPlot(fg, frac=frac, niter=niter, enable_heater_params=ehp)
     sp.plot_initial_state()
     save_name = os.path.abspath(data).rstrip(".csv") + label + "_slider_fit.pdf"
     sp.fig.savefig(save_name)
@@ -359,6 +359,10 @@ if __name__ == "__main__":
     parser.add_argument("-slider_plot",
                         help="create a responsive plot where fit parameters are adjustable",
                         nargs=2, type=str, default=None)
+
+    parser.add_argument("--enable_heater_params",
+                        help="allow slider plot to adjust heater dRdT, width, and length",
+                        action="store_true", default=False)
 
     parser.add_argument("-frac",
                         help="perturbation fraction in interval (0,1)",
@@ -425,7 +429,8 @@ if __name__ == "__main__":
                             niter=args.niter,
                             data_lims=args.data_lims,
                             b_type=args.b_type,
-                            label=args.label)
+                            label=args.label,
+                            ehp=args.enable_heater_params)
     else:
         print("==> fit3omega: no arguments detected")
         exit(0)

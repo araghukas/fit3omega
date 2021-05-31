@@ -302,10 +302,12 @@ class SliderPlot:
     error_fmt = "error: {:<10,.6e}"
     error_green_thresh = 0.05
 
-    def __init__(self, m, frac=0.99, niter=None):
+    def __init__(self, m, frac: float = 0.99, niter: int = None,
+                 enable_heater_params: bool = False):
         mpl.rc("font", family="monospace")
         self.frac = frac
         self.niter = niter
+        self.enable_heater_params = enable_heater_params
         m.sample = m.sample.as_var_sample()
 
         self.model = m
@@ -363,22 +365,23 @@ class SliderPlot:
                     self._n_sliders += 1
 
         # prepare setup parameter sliders (Rsh, dRdT, length, width)
-        sample_params = dict(
-            dRdT=self.model.sample.heater.dRdT,
-            width=self.model.sample.heater.width,
-            length=self.model.sample.heater.length
-        )
-        for k, v in sample_params.items():
-            self.sample_sliders[k] = Slider(
-                ax=plt.axes(self._get_slider_dims()),
-                label=k,
-                valmin=(1 - self.frac) * v,
-                valmax=(1 + self.frac) * v,
-                valinit=v,
-                valfmt=self.slider_valfmt
+        if self.enable_heater_params:
+            heater_params = dict(
+                dRdT=self.model.sample.heater.dRdT,
+                width=self.model.sample.heater.width,
+                length=self.model.sample.heater.length
             )
-            self.sample_sliders[k].on_changed(self._apply_sliders)
-            self._n_sliders += 1
+            for k, v in heater_params.items():
+                self.sample_sliders[k] = Slider(
+                    ax=plt.axes(self._get_slider_dims()),
+                    label=k,
+                    valmin=(1 - self.frac) * v,
+                    valmax=(1 + self.frac) * v,
+                    valinit=v,
+                    valfmt=self.slider_valfmt
+                )
+                self.sample_sliders[k].on_changed(self._apply_sliders)
+                self._n_sliders += 1
 
         # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
