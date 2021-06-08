@@ -8,7 +8,10 @@ ROOT2 = np.sqrt(2)
 
 
 class Model:
-    """manages sample configuration and measured data"""
+    """
+    Manages sample configuration and measured data.
+    Provides easy access to useful derived quantities.
+    """
     def __init__(self, sample, data):
         if type(sample) is str:
             self.sample = Sample(sample)
