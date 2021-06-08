@@ -1,6 +1,10 @@
 import os
 import yaml
 
+"""
+A CLI for creating sample files and running various fitting operations.
+"""
+
 
 class CLI:
     HEADER = (
