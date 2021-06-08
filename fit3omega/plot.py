@@ -3,6 +3,10 @@ import matplotlib as mpl
 from matplotlib.widgets import Slider, Button
 from math import pi as PI
 
+"""
+Standard plots and visualization elements.
+"""
+
 
 def _set_mpl_defaults():
     mpl.rc('xtick', direction='in')
@@ -277,7 +281,10 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
     return fig
 
 
-class SliderPlot:
+class SliderPlot(object):
+    """
+    An interactive plot providing a real-time visual for manual data fitting.
+    """
     meas_plot_kw = dict(
         markersize=6,
         marker='x',
@@ -383,6 +390,7 @@ class SliderPlot:
                 self.sample_sliders[k].on_changed(self._apply_sliders)
                 self._n_sliders += 1
 
+        # TODO: clean up hard-coded nonsense below
         # sloppy reset button creation
         reset_button_dims = self._get_slider_dims()
         reset_button_dims[2:] = [0.1, 0.03]
