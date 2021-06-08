@@ -2,16 +2,15 @@ import numpy as np
 from scipy.optimize import basinhopping
 
 import fit3omega.plot as plot
-from fit3omega.model import Model
+from fit3omega.model import Model, ROOT2
 from fit3omega.data import ACReading
-
-ROOT2 = np.sqrt(2)
 
 
 class Stepper:
     """
     Controls random walk used in "basinhopping" fit engine
     """
+
     def __init__(self, step_sizes):
         self.step_sizes = step_sizes
         self._bounds_func = None
