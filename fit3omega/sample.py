@@ -2,7 +2,7 @@ import yaml
 from typing import NamedTuple
 
 """
-Containers for crucial data.
+Containers for crucial sample data.
 
 ALL quantities should be specified in S.I. units:
     
@@ -59,6 +59,9 @@ class Sample:
 
 
 class VarSample(Sample):
+    """
+    A variable-parameters version of the above Sample class.
+    """
     def __init__(self, config_file):
         super().__init__(config_file)
         self._heights = None
@@ -180,7 +183,7 @@ class VarSample(Sample):
 
 
 class Heater:
-    """metal heater/transducer/thermometer line properties"""
+    """Metal heater/transducer/thermometer line properties"""
 
     def __init__(self, length: float, width: float, dRdT: float, dRdT_err: float):
         self.length = self._length = length
