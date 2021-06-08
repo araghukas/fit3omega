@@ -7,6 +7,10 @@ from fit3omega.model import Model
 
 
 class FitLinearResult:
+    """
+    Implementation of the linear approximation fitting method/equation.
+    NOTE: not useful or reliable outside conditions in Borca-Tasciuc.
+    """
     W = 10
     SEP = "\t"
 
@@ -240,26 +244,3 @@ class FitLinear(Model):
                                     self.T2.y[:self._i_linear],
                                     self.T2.xerr[:self._i_linear],
                                     self.T2.yerr[:self._i_linear])
-
-
-if __name__ == "__main__":
-    SMPL = "/Users/araghukasyan/3omegaPi/control_4/control_4.f3oc"
-    DATA = "/Users/araghukasyan/3omegaPi/control_4/May26_2021_m3/tc3omega_data_2.8_V.csv"
-    fl = FitLinear(SMPL, DATA, thresh=0.9)
-    fl.set_data_limits(4, 50)
-    fl.fit()
-    print(fl.result)
-    fl.plot_fit(show=True)
-
-    # import matplotlib.pyplot as plt
-    #
-    # plt.plot(fl.omegas, fl.T2.x)
-    # plt.plot(fl.omegas, fl.T2.y)
-    #
-    # plt.plot(fl.omegas_linear, fl.T2_linear.x, linestyle='None', marker='s')
-    # plt.plot(fl.omegas_linear, fl.T2_linear.y, linestyle='None', marker='s')
-    #
-    # plt.plot(fl.omegas_linear, fl.T2_fit.x, color='b')
-    # plt.plot(fl.omegas_linear, fl.T2_fit.y, color='g')
-    # plt.xscale("log")
-    # plt.show()
