@@ -9,6 +9,9 @@ ROOT2 = np.sqrt(2)
 
 
 class Stepper:
+    """
+    Controls random walk used in "basinhopping" fit engine
+    """
     def __init__(self, step_sizes):
         self.step_sizes = step_sizes
         self._bounds_func = None
@@ -30,6 +33,7 @@ class Stepper:
 
     @staticmethod
     def bounds_by_fraction(guesses: list, frac: float):
+        # TODO: not quite right here
         f = frac / 2
         a1 = 1 - f
         a2 = 1 + f
@@ -43,6 +47,9 @@ class Stepper:
 
 
 class BasicPrinterCallBack:
+    """
+    Handles neatly printing results during fitting iterations
+    """
     MIN_F_THRESH = 1e-6
 
     def __init__(self, i_max, silent=False):
@@ -80,6 +87,10 @@ class BasicPrinterCallBack:
 
 
 class FitGeneralResult:
+    """
+    A probably-unnecessary container for the fit result.
+    This class mostly just enables consistently formatted output.
+    """
     W = 10
     SEP = "\t"
 
@@ -135,6 +146,11 @@ class FitGeneralResult:
 
 
 class FitGeneral(Model):
+    """
+    Implementation of the general fitting method/equation.
+    Combines "basinhopping" library method with the physics model in the C-extension.
+    """
+
     BOUNDARY_TYPES = ['s', 'i', 'a']
     FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
 
