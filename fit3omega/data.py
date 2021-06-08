@@ -4,6 +4,10 @@ from typing import NamedTuple
 
 
 class ACReading(NamedTuple):
+    """
+    A container for arrays of measured or calculated complex quantities.
+    Used for sweep measured harmonic-voltages, complex temperature, etc.
+    """
     x: np.array  # cos voltage
     y: np.array  # sin voltage
     xerr: np.array  # (abserr x) / abs x
@@ -29,7 +33,7 @@ class ACReading(NamedTuple):
         """absolute error (in radians) of phase angle"""
         r = self.y / self.x
         dr = r * np.sqrt(self.xerr**2 + self.yerr**2)
-        # d[ arctan(r) ] = 1 / (1 + r**2) * dr
+        # note that: d[ arctan(r) ] = 1 / (1 + r**2) * dr
         return dr / (1 + r**2)
 
     def relerr_phi(self):
@@ -42,6 +46,9 @@ class ACReading(NamedTuple):
 
 
 class Data:
+    """
+    Handles the measurement data, given the CSV file containing it
+    """
     CSV_COLS = {
         "V": ['Vs_1w', 'Vs_1w_o'],
         "V3": ['Vs_3w', 'Vs_3w_o'],
