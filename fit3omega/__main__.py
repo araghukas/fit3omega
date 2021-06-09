@@ -386,7 +386,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-label",
                         help="label to append to saved files",
-                        type=str, default="")
+                        type=str, default="no-label")
 
     parser.add_argument("-fit_linear",
                         help="fit and plot 3omega voltage data from sample config and data csv",
