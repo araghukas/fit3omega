@@ -14,6 +14,6 @@ this automatically should compile and link the C-extension module.
 a sample configuration file prepared (see example folder). The quickest way to run a data fit
 is to invoke `fit3omega` from the command line:
 
-    python -m fit3omega -fit sample.f3oc data.csv -niter 100 -label test --show
+    python -m fit3omega -fit sample.f3oc data.csv -niter 100 -save_name test_fit.png --show
 
 Try it in the `example/` directory.
