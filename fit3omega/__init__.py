@@ -4,4 +4,4 @@ from .data import Data
 from .sample import Sample
 
 
-__version__ = "8Jun2021"
+__version__ = "13Jun2021"
