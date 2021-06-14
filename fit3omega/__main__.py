@@ -349,24 +349,24 @@ if __name__ == "__main__":
                         help="toggle showing plot window after plotting",
                         action="store_true", default=False)
 
-    parser.add_argument("-plot_data",
+    parser.add_argument("-plot_data", metavar=("<config file>", "<data file>"),
                         help="plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
-    parser.add_argument("-plot_diagnostics",
+    parser.add_argument("-plot_diagnostics", metavar=("<config file>", "<data file>"),
                         help="plot power and 3omega voltage over current cubed "
                              "from sample config and data csv",
                         nargs=2, type=str, default=None)
 
-    parser.add_argument("-compare_data",
+    parser.add_argument("-compare_data", metavar=("<config file>", "<data file 1>", "<data file 2>"),
                         help="plot 3omega voltage from two different runs on the same sample",
                         nargs=3, type=str, default=None)
 
-    parser.add_argument("-fit",
+    parser.add_argument("-fit", metavar=("<config file>", "<data file>"),
                         help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
-    parser.add_argument("-slider_plot",
+    parser.add_argument("-slider_plot", metavar=("<config file>", "<data file>"),
                         help="create a responsive plot where fit parameters are adjustable",
                         nargs=2, type=str, default=None)
 
@@ -382,7 +382,7 @@ if __name__ == "__main__":
                         help="number of basinhopping iterations",
                         type=int, default=None)
 
-    parser.add_argument("-data_lims",
+    parser.add_argument("-data_lims", metavar=("<lower>", "<upper>"),
                         help="indices of first and last data points",
                         nargs=2, type=int, default=None)
 
@@ -394,7 +394,7 @@ if __name__ == "__main__":
                         help="output file name",
                         type=str, default=None)
 
-    parser.add_argument("-fit_linear",
+    parser.add_argument("-fit_linear",  metavar=("<config file>", "<data file>"),
                         help="fit and plot 3omega voltage data from sample config and data csv",
                         nargs=2, type=str, default=None)
 
