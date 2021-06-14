@@ -12,6 +12,10 @@ Use exponentiation instead of unit prefixes. (ex: 2e-9 [m] for 2 nm)
 """
 
 
+class SampleError(Exception):
+    pass
+
+
 class Sample:
     def __init__(self, config_file):
         self.shunt = None
@@ -21,8 +25,10 @@ class Sample:
         self._config_file = config_file
 
     def load_config(self, config_file):
-        with open(config_file, 'r') as f:
+        with open(config_file) as f:
             d = yaml.safe_load(f)
+            if type(d) is str:
+                raise SampleError(f"invalid sample configuration file:\n {config_file}")
         for k, v in d.items():
             if k == "shunt":
                 self.shunt = Shunt(**v)
@@ -62,6 +68,7 @@ class VarSample(Sample):
     """
     A variable-parameters version of the above Sample class.
     """
+
     def __init__(self, config_file):
         super().__init__(config_file)
         self._heights = None
@@ -71,7 +78,7 @@ class VarSample(Sample):
         self.reset_params()
 
     def load_config(self, config_file):
-        with open(config_file, 'r') as f:
+        with open(config_file) as f:
             d = yaml.safe_load(f)
         for k, v in d.items():
             if k == "shunt":
