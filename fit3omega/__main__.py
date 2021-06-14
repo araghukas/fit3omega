@@ -328,10 +328,9 @@ def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, save_name,
 
     sp = SliderPlot(fg, frac=frac, niter=niter, enable_heater_params=ehp)
     sp.plot_initial_state()
-    if save_name is None:
-        save_name = os.path.abspath(data).rstrip(".csv") + "_slider_fit.pdf"
-    sp.fig.savefig(save_name)
-    print("==> fit3omega: saved plot as %s" % save_name)
+    if save_name is not None:
+        sp.fig.savefig(save_name)
+        print("==> fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
