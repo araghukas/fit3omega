@@ -188,7 +188,7 @@ class FitGeneral(Model):
         self._error = None
 
         # C-extension integrator module
-        self.intg = __import__('intg')
+        self.intg = __import__('integrate')
 
     @property
     def fitted_kwargs(self):
@@ -238,7 +238,7 @@ class FitGeneral(Model):
 
         # extra divisor of ROOT2 since measured T2 amplitudes are RMS
         P = -1. / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
-        return P * self.intg.integral(heights, kys, ratio_xys, Cvs)
+        return P * self.intg.bt_integral(heights, kys, ratio_xys, Cvs)
 
     def T2_err_func(self, args) -> float:
         """objective function for the fit method"""
@@ -256,7 +256,7 @@ class FitGeneral(Model):
         T2_func_ = self.T2_func(*args_T2)
 
         err = sum(np.abs(self.T2.x - T2_func_.real))
-        # err += sum(np.abs(self.T2.y - T2_func_.imag))
+        err += sum(np.abs(self.T2.y - T2_func_.imag))
         return err / len(T2_func_)
 
     def plot_fit(self, show=False):
@@ -289,10 +289,10 @@ class FitGeneral(Model):
         self._result = FitGeneralResult(self.sample, self._guesses, fit_result.x, self._ids)
 
     def _set_intg(self):
-        self.intg.set(self.omegas,
-                      self.heater.width / 2,
-                      1e-3,
-                      1e7,
-                      len(self.sample.layers),
-                      self.b_type.encode('utf-8'))
+        self.intg.bt_set(self.omegas,
+                         self.heater.width / 2,
+                         1e-3,
+                         1e7,
+                         len(self.sample.layers),
+                         self.b_type.encode('utf-8'))
         self._intg_set = True
