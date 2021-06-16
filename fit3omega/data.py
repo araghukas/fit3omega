@@ -6,43 +6,11 @@ from typing import NamedTuple
 class ACReading(NamedTuple):
     """
     A container for arrays of measured or calculated complex quantities.
-    Used for sweep measured harmonic-voltages, complex temperature, etc.
     """
     x: np.array  # cos voltage
     y: np.array  # sin voltage
     xerr: np.array  # (abserr x) / abs x
     yerr: np.array  # (abserr y) / abs y
-
-    def norm(self):
-        """pythagorean norm"""
-        return np.sqrt(self.x**2 + self.y**2)
-
-    def phi(self):
-        """phase"""
-        return np.arctan(self.y / self.x)
-
-    def abserr(self):
-        """absolute error of norm"""
-        return np.sqrt((self.x * self.xerr)**2 + (self.y * self.yerr)**2)
-
-    def relerr(self):
-        """relative error of norm"""
-        return self.abserr() / self.norm()
-
-    def abserr_phi(self):
-        """absolute error (in radians) of phase angle"""
-        r = self.y / self.x
-        dr = r * np.sqrt(self.xerr**2 + self.yerr**2)
-        # note that: d[ arctan(r) ] = 1 / (1 + r**2) * dr
-        return dr / (1 + r**2)
-
-    def relerr_phi(self):
-        """relative error of phase angle"""
-        return self.abserr_phi() / self.phi()
-
-    def phasor(self):
-        """complex vector x + jy"""
-        return self.x + 1j * self.y
 
 
 class Data:
@@ -149,23 +117,27 @@ class Data:
 
     @property
     def omegas(self) -> np.array:
+        """2*PI*f for each measurement frequency f"""
         omegas_ = 2 * np.pi * self.data['freq'].values
         return np.ascontiguousarray(omegas_)
 
     @property
     def V(self) -> ACReading:
+        """(V_x,RMS, V_y,RMS, d(V_x,RMS), d(V_y,RMS)"""
         if self._V is None:
             self._V = self._get_reading("V")
         return self._V
 
     @property
     def V3(self) -> ACReading:
+        """(V3_x,RMS, V3_y,RMS, d(V3_x,RMS), d(V3_y,RMS)"""
         if self._V3 is None:
             self._V3 = self._get_reading("V3")
         return self._V3
 
     @property
     def Vsh(self) -> ACReading:
+        """(Vsh_x,RMS, Vsh_y,RMS, d(Vsh_x,RMS), d(Vsh_y,RMS)"""
         if self._Vsh is None:
             self._Vsh = self._get_reading("Vsh")
         return self._Vsh
@@ -173,10 +145,10 @@ class Data:
     def _get_reading(self, key) -> ACReading:
         args = tuple()
         for k in self.CSV_COLS[key]:
-            # average voltages
+            # average voltages (x, y)
             args += (self.data[k].values,)
         for k in self.CSV_COLS['d' + key]:
-            # standard deviations
+            # standard deviations (xerr, yerr)
             data_values = self.data[k[1:]].values
             data_values[data_values == 0] = 1e-12  # avoid division errors
             args += (self.error[k].values / data_values,)
