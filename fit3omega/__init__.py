@@ -1,4 +1,4 @@
-from .fit_general import FitGeneral
+from .fit_cahill import FitCahill
 from .model import Model
 from .data import Data
 from .sample import Sample

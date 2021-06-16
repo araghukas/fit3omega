@@ -276,9 +276,9 @@ def _plot_compare_data(sample, data1, data2, save_name, show=True):
 
 
 def _fit_data_general_model(sample, data, frac, niter, data_lims, b_type, save_name, show=True):
-    from .fit_general import FitGeneral
+    from .fit_cahill import FitCahill
     niter = 30 if niter is None else niter
-    fg = FitGeneral(sample, data, b_type)
+    fg = FitCahill(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
     fg.fit(niter=niter, frac=frac)
@@ -320,9 +320,9 @@ def _fit_data_linear_model(sample, data, data_lims, save_name, thresh, min_lengt
 
 
 def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, save_name, ehp):
-    from .fit_general import FitGeneral
+    from .fit_cahill import FitCahill
     from .plot import SliderPlot
-    fg = FitGeneral(sample, data, b_type)
+    fg = FitCahill(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
 
