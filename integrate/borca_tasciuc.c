@@ -19,7 +19,7 @@ double complex fA(int i_layer, double lambda, double omega, double *ds, double *
 {
   /* Borca-Tasciuc Eq. (2); with i -> i+1 */
   // base case - depends on boundary type
-  if (i_layer == n_layers_ - 1) {
+  if (i_layer == N_LAYERS - 1) {
     switch (boundary_type_)
     {
       case 's':
@@ -47,6 +47,7 @@ double complex fA(int i_layer, double lambda, double omega, double *ds, double *
   double k_i = kys[i_layer];
   double k_ii = kys[i_layer+1];
   double d_i = ds[i_layer];
+  
   double complex C1 = A_ii * k_ii * B_ii / (k_i * B_i);
   double complex C2 = ctanh(B_i * d_i);
   return (C1 - C2) / (1 - C1 * C2);
@@ -61,7 +62,7 @@ double complex bt_integrand(double lambda, double omega, double *ds, double *kxs
   /* Borca-Tasciuc Eq.(1) integrand */
   double complex A_top = fA(0,lambda,omega,ds,kxs,kys,Cvs);
   double complex B_top = fB(0,lambda,omega,kxs,kys,Cvs);
-  return 1.0 / (A_top * B_top) * sinc_sq(b_ * lambda);
+  return 1.0 / (A_top * B_top) * sinc_sq(HALF_WIDTH * lambda);
 }
 
 
@@ -74,7 +75,7 @@ double complex *bt_integral(double *ds, double *kxs, double *kys, double *Cvs)
     double complex f0 = bt_integrand(LAMBDAS[0],OMEGAS[i],ds,kxs,kys,Cvs);
     double complex f_prev = f0;
 
-    for (int k = 1; k < N_LAMBDAS; k++) {
+    for (int k = 1; k < N_XPTS; k++) {
 
       double complex fk = bt_integrand(LAMBDAS[k],OMEGAS[i],ds,kxs,kys,Cvs);
       double dx = LAMBDAS[k] - LAMBDAS[k-1];
