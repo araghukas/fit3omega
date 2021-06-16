@@ -7,8 +7,8 @@ class ACReading(NamedTuple):
     """
     A container for arrays of measured or calculated complex quantities.
     """
-    x: np.array  # cos voltage
-    y: np.array  # sin voltage
+    x: np.array  # "real" part
+    y: np.array  # "imag" part
     xerr: np.array  # (abserr x) / abs x
     yerr: np.array  # (abserr y) / abs y
 
