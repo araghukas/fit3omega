@@ -107,7 +107,7 @@ static PyObject *OGC_Integral(PyObject *self, PyObject * args)
 
 /*
 ----------------------------------------------------------------------------------------------------
-SET STATIC VALUES
+INITIALIZER FUNCTIONS
 ----------------------------------------------------------------------------------------------------
 */
 static PyObject *BT_Set(PyObject *self, PyObject *args)
