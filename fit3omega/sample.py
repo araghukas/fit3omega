@@ -1,6 +1,7 @@
 import yaml
 from typing import NamedTuple
 from os.path import expanduser
+
 """
 Containers for crucial sample data.
 
@@ -13,6 +14,8 @@ Use exponentiation instead of unit prefixes. (ex: 2e-9 [m] for 2 nm)
 
 
 class Sample:
+    """The sample data reader and container"""
+
     def __init__(self, config_file):
         self.shunt = None
         self.heater = None
@@ -58,20 +61,29 @@ class Sample:
     def Cvs(self):
         return [layer.Cv for layer in self.layers]
 
+    @property
+    def Rcs(self):
+        return [layer.Rc for layer in self.layers]
+
 
 class Heater:
-    """Metal heater/transducer/thermometer line properties"""
+    """properties of metal heater/transducer/thermometer line"""
 
-    def __init__(self, length: float, width: float, dRdT: float, dRdT_err: float):
+    def __init__(self, length: float, width: float, dRdT: float, dRdT_err: float,
+                 Cv: float = 0.0, height: float = 0.0):
         self.length = self._length = length
         self.width = self._width = width
+        self.height = self._height = height  # Olson model only
         self.dRdT = self._dRdT = dRdT
+        self.Cv = self._Cv = Cv  # Olson model only, heat capacity [J/m^3/K]
         self.dRdT_err = dRdT_err
 
     def reset(self):
         self.dRdT = self._dRdT
         self.width = self._width
+        self.height = self._height
         self.length = self._length
+        self.Cv = self._Cv
 
     def modify(self, attr_name, new_value):
         if not attr_name.startswith("_"):
@@ -82,21 +94,23 @@ class Heater:
 
 
 class SampleError(Exception):
-    """just a new name for it"""
     pass
 
 
 class Shunt(NamedTuple):
+    """properties of the shunt resistor (current measurement)"""
     R: float
     err: float
 
 
 class Layer(NamedTuple):
+    """properties of a layer in the thermal model"""
     name: str
     height: float
     ky: float
     ratio_xy: float
-    Cv: float  # heat capacity [J/m^3/K]
+    Cv: float        # heat capacity [J/m^3/K]
+    Rc: float = 0.0  # Olson model only, thermal contact resistance to layer below
 
     def as_dict(self):
         return {
@@ -104,5 +118,6 @@ class Layer(NamedTuple):
             "height": self.height,
             "ky": self.ky,
             "ratio_xy": self.ratio_xy,
-            "Cv": self.Cv
+            "Cv": self.Cv,
+            "Rc": self.Rc,
         }

@@ -6,12 +6,15 @@ class VarSample(Sample):
     A variable-parameters version of the above Sample class.
     """
 
+    setter_error_msg = "array length incompatible with sample config"
+
     def __init__(self, config_file):
         super().__init__(config_file)
         self._heights = None
         self._kys = None
         self._ratio_xys = None
         self._Cvs = None
+        self._Rcs = None
         self.reset_params()
 
     def reset_params(self):
@@ -40,7 +43,7 @@ class VarSample(Sample):
         if len(x) == len(self.layers):
             self._heights = x
         else:
-            raise ValueError("array length incompatible with sample config")
+            raise ValueError(self.setter_error_msg)
 
     @property
     def kys(self):
@@ -51,7 +54,7 @@ class VarSample(Sample):
         if len(x) == len(self.layers):
             self._kys = x
         else:
-            raise ValueError("array length incompatible with sample config")
+            raise ValueError(self.setter_error_msg)
 
     @property
     def ratio_xys(self):
@@ -62,7 +65,7 @@ class VarSample(Sample):
         if len(x) == len(self.layers):
             self._ratio_xys = x
         else:
-            raise ValueError("array length incompatible with sample config")
+            raise ValueError(self.setter_error_msg)
 
     @property
     def Cvs(self):
@@ -73,7 +76,18 @@ class VarSample(Sample):
         if len(x) == len(self.layers):
             self._Cvs = x
         else:
-            raise ValueError("array length incompatible with sample config")
+            raise ValueError(self.setter_error_msg)
+
+    @property
+    def Rcs(self):
+        return self._Rcs
+
+    @Rcs.setter
+    def Rcs(self, x):
+        if len(x) == len(self.layers):
+            self._Rcs = x
+        else:
+            raise ValueError(self.setter_error_msg)
 
     def param_modify(self, layer_name: str, attr_name: str, new_value: float) -> None:
         if layer_name is None:
@@ -85,6 +99,8 @@ class VarSample(Sample):
                 self.ratio_xys = new_value
             elif attr_name == "Cvs":
                 self.Cvs = new_value
+            elif attr_name == "Rcs":
+                self.Rcs = new_value
             else:
                 raise ValueError("unrecognized attribute name `%s`" % attr_name)
             return
@@ -107,6 +123,10 @@ class VarSample(Sample):
                     x = self.Cvs.copy()
                     x[i] = new_value
                     self.Cvs = x
+                elif attr_name == "Rcs":
+                    x = self.Rcs.copy()
+                    x[i] = new_value
+                    self.Rcs = x
                 else:
                     raise ValueError("unrecognized attribute name `%s`" % attr_name)
                 return
