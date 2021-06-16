@@ -1,6 +1,6 @@
 import yaml
 from typing import NamedTuple
-
+from os.path import expanduser
 """
 Containers for crucial sample data.
 
@@ -21,6 +21,7 @@ class Sample:
         self.load_config(config_file)
 
     def load_config(self, config_file):
+        config_file = expanduser(config_file)
         with open(config_file) as f:
             d = yaml.safe_load(f)
             if type(d) is str:
