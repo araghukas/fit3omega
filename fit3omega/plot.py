@@ -3,6 +3,8 @@ import matplotlib as mpl
 from matplotlib.widgets import Slider, Button
 from math import pi as PI
 
+from fit3omega.varsample import VarSample
+
 """
 Standard plots and visualization elements.
 """
@@ -315,7 +317,7 @@ class SliderPlot(object):
         self.frac = frac
         self.niter = niter
         self.enable_heater_params = enable_heater_params
-        m.sample = m.sample.as_var_sample()
+        m.sample = VarSample.from_sample(m.sample)
 
         self.model = m
         self.model.set_refresh(True)
