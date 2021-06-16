@@ -50,31 +50,26 @@ def plot_measured_data(m, show: bool = False) -> plt.Figure:
 
     cx = 'blue'
     cy = 'red'
-    cz = 'black'
 
     X = m.omegas / 2 / PI
 
     ax_V.errorbar(X, m.V.x, m.V.xerr * m.V.x, color=cx, elinewidth=.5)
     ax_V.errorbar(X, m.V.y, m.V.yerr * m.V.y, color=cy, elinewidth=.5)
-    ax_V.errorbar(X, m.V.norm(), m.V.abserr(), color=cz, elinewidth=.5)
     ax_V.grid(which="both")
 
     ax_Ish.errorbar(X, m.Ish.x, m.Ish.xerr * m.Ish.x, color=cx, label='X',
                     elinewidth=.5)
     ax_Ish.errorbar(X, m.Ish.y, m.Ish.yerr * m.Ish.y, color=cy, label='Y',
                     elinewidth=.5)
-    ax_Ish.errorbar(X, m.Ish.norm(), m.Ish.abserr(), color=cz, label='R', elinewidth=.5)
     ax_Ish.legend(frameon=False, fontsize=15)
     ax_Ish.grid(which="both")
 
     ax_V3.errorbar(X, m.V3.x, m.V3.xerr * m.V3.x, color=cx, elinewidth=.5)
     ax_V3.errorbar(X, m.V3.y, m.V3.yerr * m.V3.y, color=cy, elinewidth=.5)
-    ax_V3.errorbar(X, m.V3.norm(), m.V3.abserr(), color=cz, elinewidth=.5)
     ax_V3.grid(which="both")
 
     ax_T2.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x, color=cx, markerfacecolor=cx, elinewidth=.5)
     ax_T2.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y, color=cy, markerfacecolor=cy, elinewidth=.5)
-    ax_T2.errorbar(X, m.T2.norm(), m.T2.abserr(), color=cz, markerfacecolor=cz, elinewidth=.5)
     ax_T2.grid(which="both")
 
     if show:
@@ -115,11 +110,9 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
 
     cx1 = 'blue'
     cy1 = 'red'
-    cz1 = 'black'
 
     ax_V.plot(X2, m1.V.x, color=cx1)
     ax_V.plot(X2, m1.V.y, color=cy1)
-    ax_V.plot(X2, m1.V.norm(), color=cz1)
     ax_V.text(0.1, 0.5, "dark: %s" % m1.data.data_file, fontsize=7,
               transform=ax_V.transAxes)
     ax_V.text(0.1, 0.45, "light: %s" % m2.data.data_file, fontsize=7,
@@ -128,45 +121,37 @@ def plot_compare_measured_data(m1, m2, show: bool = False) -> plt.Figure:
 
     ax_Ish.plot(X2, m1.Ish.x, color=cx1, label='X')
     ax_Ish.plot(X2, m1.Ish.y, color=cy1, label='Y')
-    ax_Ish.plot(X2, m1.Ish.norm(), color=cz1, label='R')
     ax_Ish.legend(frameon=False, fontsize=15)
     ax_Ish.grid(which="both")
 
     ax_V3.plot(X2, m1.V3.x, color=cx1)
     ax_V3.plot(X2, m1.V3.y, color=cy1)
-    ax_V3.plot(X2, m1.V3.norm(), color=cz1)
     ax_V3.grid(which="both")
 
     ax_T2.plot(X2, m1.T2.x, color=cx1)
     ax_T2.plot(X2, m1.T2.y, color=cy1)
-    ax_T2.plot(X2, m1.T2.norm(), color=cz1)
     ax_T2.grid(which="both")
 
     X2 = m2.omegas / 2 / PI
 
     cx2 = 'turquoise'
     cy2 = 'salmon'
-    cz2 = 'grey'
 
     ax_V.plot(X2, m2.V.x, color=cx2)
     ax_V.plot(X2, m2.V.y, color=cy2)
-    ax_V.plot(X2, m2.V.norm(), color=cz2)
     ax_V.grid(which="both")
 
     ax_Ish.plot(X2, m2.Ish.x, color=cx2)
     ax_Ish.plot(X2, m2.Ish.y, color=cy2)
-    ax_Ish.plot(X2, m2.Ish.norm(), color=cz2)
     ax_Ish.legend(frameon=False, fontsize=15)
     ax_Ish.grid(which="both")
 
     ax_V3.plot(X2, m2.V3.x, color=cx2)
     ax_V3.plot(X2, m2.V3.y, color=cy2)
-    ax_V3.plot(X2, m2.V3.norm(), color=cz2)
     ax_V3.grid(which="both")
 
     ax_T2.plot(X2, m2.T2.x, color=cx2)
     ax_T2.plot(X2, m2.T2.y, color=cy2)
-    ax_T2.plot(X2, m2.T2.norm(), color=cz2)
     ax_T2.grid(which="both")
 
     if show:
@@ -190,12 +175,9 @@ def plot_fitted_T2(m, show: bool = False) -> tuple:
                 linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
     ax.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y,
                 linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
-    ax.errorbar(X, m.T2.norm(), m.T2.relerr() * m.T2.norm(),
-                linewidth=0, elinewidth=1, color=cs[2], label=ls[2])
 
     ax.plot(X, m.T2_fit.x, markersize=0, color=cs[0])
     ax.plot(X, m.T2_fit.y, markersize=0, color=cs[1])
-    ax.plot(X, m.T2_fit.norm(), markersize=0, color=cs[2])
 
     ax.legend(frameon=False)
 
@@ -221,8 +203,6 @@ def plot_fitted_T2_linear(m, show: bool = False) -> tuple:
                 linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
     ax.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y,
                 linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
-    ax.errorbar(X, m.T2.norm(), m.T2.relerr() * m.T2.norm(),
-                linewidth=0, elinewidth=1, color=cs[2], label=ls[2])
 
     X_linear = m.omegas_linear / 2. / PI
     ax.plot(X_linear, m.T2_fit.x, markersize=0, linewidth=2, color="cyan")
@@ -251,7 +231,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
     fig.text(0.5, 0.05, "Source Frequency [Hz]",
              ha="center", va="top", fontsize=15)
 
-    ax_power.set_ylabel("Power [mW]")
+    ax_power.set_ylabel("Real Power [mW]")
     ax_VI.set_ylabel(r"$V_{3\omega,x} (I_{1\omega})^{-3}$")
 
     ax_power.grid("both")
@@ -259,7 +239,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
     X = m.omegas / 2. / PI
 
-    power = m.power.norm() * 1e3  # mW
+    power = m.power.x * 1e3  # mW
     dpower = m.power.abserr()
 
     ax_power.errorbar(X, power, dpower, elinewidth=.5, color='k')
@@ -270,8 +250,8 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
 
     V3x = m.V3.x
     dV3x = V3x * m.V3.xerr
-    I_cubed = m.Ish.norm()**3
-    dI_cubed = sqrt(3) * m.Ish.abserr()
+    I_cubed = m.Ish.x**3
+    dI_cubed = sqrt(3) * m.Ish.xerr * I_cubed
 
     VI = V3x / I_cubed
     dVI = sqrt(dV3x**2 + dI_cubed**2)
@@ -340,18 +320,15 @@ class SliderPlot(object):
         X = self.model.omegas / 2. / PI
         cx = 'blue'
         cy = 'red'
-        cz = 'black'
 
         # measured data
         self.ax.plot(X, self.model.T2.x, color=cx, **self.meas_plot_kw)
         self.ax.plot(X, self.model.T2.y, color=cy, **self.meas_plot_kw)
-        self.ax.plot(X, self.model.T2.norm(), color=cz, **self.meas_plot_kw)
 
         # fitted data (initial values)
         fit = self.get_fitline_data()
         self.ax.plot(X, fit[0], color=cx, **self.fit_plot_kw)
         self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
-        self.ax.plot(X, fit[2], color=cz, **self.fit_plot_kw)
 
         # prepare the fit parameters sliders
         for i, layer in enumerate(self.model.sample.layers):
@@ -416,8 +393,8 @@ class SliderPlot(object):
                                      hovercolor=self.button_hovercolor)
         self.buttons["Fit"].on_clicked(self._run_fit_and_update)
 
-        self.ax.text(0.0, 1.025, self.error_fmt.format(fit[3]), transform=self.ax.transAxes,
-                     fontsize=10, color=self._get_error_color(fit[3]), fontweight="bold")
+        self.ax.text(0.0, 1.025, self.error_fmt.format(fit[2]), transform=self.ax.transAxes,
+                     fontsize=10, color=self._get_error_color(fit[2]), fontweight="bold")
         plt.show()
 
     def get_fitline_data(self):
@@ -429,10 +406,9 @@ class SliderPlot(object):
         T2_complex = self.model.T2_func(heights, kys, ratio_xys, Cvs)
         T2_x = T2_complex.real
         T2_y = T2_complex.imag
-        T2_norm = abs(T2_complex)
         err = (sum(abs(self.model.T2.x - T2_complex.real))
                + sum(abs(self.model.T2.y - T2_complex.imag)))
-        return T2_x, T2_y, T2_norm, err / (2 * len(T2_x))
+        return T2_x, T2_y, err / (2 * len(T2_x))
 
     def _apply_sliders(self, _):
         for label, slider in self.param_sliders.items():
@@ -446,12 +422,10 @@ class SliderPlot(object):
         fit = self.get_fitline_data()
         self.ax.lines[0].set_ydata(self.model.T2.x)
         self.ax.lines[1].set_ydata(self.model.T2.y)
-        self.ax.lines[2].set_ydata(self.model.T2.norm())
-        self.ax.lines[3].set_ydata(fit[0])
-        self.ax.lines[4].set_ydata(fit[1])
-        self.ax.lines[5].set_ydata(fit[2])
-        self.ax.texts[0].set_text(self.error_fmt.format(fit[3]))
-        self.ax.texts[0].set_color(self._get_error_color(fit[3]))
+        self.ax.lines[2].set_ydata(fit[0])
+        self.ax.lines[3].set_ydata(fit[1])
+        self.ax.texts[0].set_text(self.error_fmt.format(fit[2]))
+        self.ax.texts[0].set_color(self._get_error_color(fit[2]))
         self.fig.canvas.draw_idle()
 
     def _reset_sliders(self, _):
