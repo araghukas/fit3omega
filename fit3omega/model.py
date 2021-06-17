@@ -80,25 +80,22 @@ class Model:
 
     @property
     def T2(self) -> ACReading:
-        """RMS amplitude of temperature oscillations at double-frequency"""
+        """amplitude of temperature oscillations at double-frequency"""
         if self._T2 is None or self._refresh_dependents:
-            x = ROOT2 * np.abs(self.V3.x) / self.heater.dRdT / self.Ish.x
-            y = -ROOT2 * np.abs(self.V3.y) / self.heater.dRdT / self.Ish.x
-            xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + self.Ish.xerr**2)
-            yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + self.Ish.xerr**2)
+            Ish_RMS = np.sqrt(self.Ish.x**2 + self.Ish.y**2)
+            Ish_RMS_err = np.sqrt(self.Ish.xerr**2 + self.Ish.yerr**2)
+            x = 2. * np.abs(self.V3.x) / (self.heater.dRdT * Ish_RMS)
+            y = -2. * np.abs(self.V3.y) / (self.heater.dRdT * Ish_RMS)
+            xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + Ish_RMS_err**2)
+            yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + Ish_RMS_err**2)
             self._T2 = ACReading(x, y, xerr, yerr)
-
-            if np.any(np.abs(self.Ish.y) > 1e-3):
-                warn("neglected self.Ish.y component > 1 mA when computing T2",
-                     ApproximationWarning)
 
         return self._T2
 
     @property
     def power(self) -> ACReading:
-        """RMS complex power (IEEE Std 1459-2010)"""
+        """RMS complex power (IEEE Std 1459-2010): S = VI* """
         if self._power is None or self._refresh_dependents:
-
             x = self.V.x * self.Ish.x + self.V.y * self.Ish.y
             xerr = np.sqrt(
                 (self.V.x * self.Ish.x)**2 * (self.V.xerr**2 + self.Ish.xerr**2)
