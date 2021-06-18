@@ -93,12 +93,10 @@ class Model:
     def T2(self) -> ACReading:
         """average 2ω temperature oscillations at each ω"""
         if self._T2 is None or self._refresh_dependents:
-            Ish_RMS = np.sqrt(self.Ish.x**2 + self.Ish.y**2)
-            Ish_RMS_err = np.sqrt(self.Ish.xerr**2 + self.Ish.yerr**2)
-            x = 2. * np.abs(self.V3.x) / (self.heater.dRdT * Ish_RMS)
-            y = -2. * np.abs(self.V3.y) / (self.heater.dRdT * Ish_RMS)
-            xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + Ish_RMS_err**2)
-            yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + Ish_RMS_err**2)
+            x = 2. * np.abs(self.V3.x) / (self.heater.dRdT * self.Ish.norm)
+            y = -2. * np.abs(self.V3.y) / (self.heater.dRdT * self.Ish.norm)
+            xerr = np.sqrt(self.V3.xerr**2 + self.heater.dRdT_err**2 + self.Ish.norm_err**2)
+            yerr = np.sqrt(self.V3.yerr**2 + self.heater.dRdT_err**2 + self.Ish.norm_err**2)
             self._T2 = ACReading(x, y, xerr, yerr)
 
         return self._T2
@@ -106,29 +104,24 @@ class Model:
     @property
     def Z2(self) -> ACReading:
         """
-        average 2ω surface thermal impedance at each ω
+        Average 2ω surface thermal impedance at each ω
         (Z2 = T/Q, Joule heat input Q) [K / W ]
         """
         if self._Z2 is None or self._refresh_dependents:
-            Ish_RMS = np.sqrt(self.Ish.x**2 + self.Ish.y**2)
-            Ish_RMS_err = np.sqrt(self.Ish.xerr**2 + self.Ish.yerr**2)
-            V_RMS = np.sqrt(self.V.x**2 + self.V.y**2)
-            V_RMS_err = np.sqrt(self.V.xerr**2 + self.V.yerr**2)
-            x = -2. * np.abs(self.V3.x) / (V_RMS * Ish_RMS**2 * self.heater.dRdT)
-            y = 2. * np.abs(self.V3.y) / (V_RMS * Ish_RMS**2 * self.heater.dRdT)
-            xerr = np.sqrt(
-                self.V3.xerr**2 + V_RMS_err**2 + 2. * Ish_RMS_err**2 + self.heater.dRdT_err**2
-            )
-            yerr = np.sqrt(
-                self.V3.yerr**2 + V_RMS_err**2 + 2. * Ish_RMS_err**2 + self.heater.dRdT_err**2
-            )
+            x = self.T2.x / self.power.norm
+            y = self.T2.y / self.power.norm
+            xerr = np.sqrt(self.T2.xerr**2 + self.power.norm_err**2)
+            yerr = np.sqrt(self.T2.yerr**2 + self.power.norm_err**2)
             self._Z2 = ACReading(x, y, xerr, yerr)
 
         return self._Z2
 
     @property
     def power(self) -> ACReading:
-        """average active and reactive power (IEEE Std 1459-2010): S = VI* """
+        """
+        Average active (x) and reactive (y) power (IEEE Std 1459-2010): S = VI*
+        P_ave = I_rms V_rms = |power|
+        """
         if self._power is None or self._refresh_dependents:
             x = self.V.x * self.Ish.x + self.V.y * self.Ish.y
             xerr = np.sqrt(
@@ -149,6 +142,7 @@ class Model:
         self.data.set_limits(start, end)
         self._Ish = None
         self._T2 = None
+        self._Z2 = None
         self._dT2 = None
         self._power = None
 
