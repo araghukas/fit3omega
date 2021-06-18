@@ -41,7 +41,7 @@ double complex ogc_integrand(double chi, double omega,
 	                           double *ds, double *kxs, double *kys, double *Cvs, double *Rcs)
 {
 	/* OGC Eq. (4) integrand */
-	static const double A = 2.0 / M_PI; // 2x because integrand is symmetric in chi (0,MAX]
+	static const double A = 2.0 / M_PI; // 2x because integrand is symmetric in chi [-MAX,MAX]
 	return A * (fz(0,chi,omega,ds,kxs,kys,Cvs,Rcs) + Rcs[0]) * sinc_sq(chi);
 }
 
