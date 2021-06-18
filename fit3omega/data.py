@@ -1,16 +1,15 @@
 import pandas as pd
 import numpy as np
-from typing import NamedTuple
 
 
-class ACReading(NamedTuple):
-    """
-    A container for arrays of measured or calculated complex quantities.
-    """
-    x: np.array  # "real" part
-    y: np.array  # "imag" part
-    xerr: np.array  # (abserr x) / abs x
-    yerr: np.array  # (abserr y) / abs y
+class ACReading:
+    def __init__(self, x, y, xerr, yerr):
+        self.x = x  # "real" part
+        self.y = y  # "imag" part
+        self.xerr = xerr  # (abserr x) / abs x
+        self.yerr = yerr  # (abserr y) / abs y
+        self.norm = np.sqrt(x**2 + y**2)  # R
+        self.norm_err = np.sqrt(xerr**2 + yerr * 2)  # (abserr R) / R
 
 
 class Data:
