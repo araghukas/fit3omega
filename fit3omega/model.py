@@ -1,5 +1,4 @@
 import numpy as np
-from warnings import warn
 
 from .sample import *
 from .data import Data, ACReading
@@ -10,8 +9,15 @@ ROOT2 = np.sqrt(2)
 
 class Model:
     """
-    Manages sample configuration and measured data.
-    Provides easy access to useful derived quantities.
+    Thermal model for 2ω temperature rise, calculated from AC signals.
+
+    All measurement data are RMS voltages, V_rms = Vx_rms + jVy_rms.
+
+    The lock-in amplifier (SRS830) displays and outputs (X, Y) or (R, θ), where
+
+        X^2 + Y^2 = R^2 = (V_signal_rms)^2
+        X = R*cos(θ)
+        Y = R*sin(θ)
     """
 
     def __init__(self, sample, data):
@@ -32,6 +38,7 @@ class Model:
 
         self._Ish = None
         self._T2 = None
+        self._Z2 = None
         self._dT2 = None
         self._power = None
 
@@ -53,23 +60,27 @@ class Model:
 
     @property
     def omegas(self) -> np.array:
+        # array of sample points ω = 2πf
         return self.data.omegas
 
     @property
     def V(self) -> ACReading:
+        # sample V[1ω] (measured)
         return self.data.V
 
     @property
     def V3(self) -> ACReading:
+        # sample V[3ω] RMS
         return self.data.V3
 
     @property
     def Vsh(self) -> ACReading:
+        # resistor V[1ω] RMS
         return self.data.Vsh
 
     @property
     def Ish(self) -> ACReading:
-        """RMS series current through heater and shunt"""
+        """RMS series current at each ω"""
         if self._Ish is None or self._refresh_dependents:
             x = self.Vsh.x / self.shunt.R
             y = self.Vsh.y / self.shunt.R
@@ -80,7 +91,7 @@ class Model:
 
     @property
     def T2(self) -> ACReading:
-        """amplitude of temperature oscillations at double-frequency"""
+        """average 2ω temperature oscillations at each ω"""
         if self._T2 is None or self._refresh_dependents:
             Ish_RMS = np.sqrt(self.Ish.x**2 + self.Ish.y**2)
             Ish_RMS_err = np.sqrt(self.Ish.xerr**2 + self.Ish.yerr**2)
@@ -93,8 +104,31 @@ class Model:
         return self._T2
 
     @property
+    def Z2(self) -> ACReading:
+        """
+        average 2ω surface thermal impedance at each ω
+        (Z2 = T/Q, Joule heat input Q) [K / W ]
+        """
+        if self._Z2 is None or self._refresh_dependents:
+            Ish_RMS = np.sqrt(self.Ish.x**2 + self.Ish.y**2)
+            Ish_RMS_err = np.sqrt(self.Ish.xerr**2 + self.Ish.yerr**2)
+            V_RMS = np.sqrt(self.V.x**2 + self.V.y**2)
+            V_RMS_err = np.sqrt(self.V.xerr**2 + self.V.yerr**2)
+            x = -2. * np.abs(self.V3.x) / (V_RMS * Ish_RMS**2 * self.heater.dRdT)
+            y = 2. * np.abs(self.V3.y) / (V_RMS * Ish_RMS**2 * self.heater.dRdT)
+            xerr = np.sqrt(
+                self.V3.xerr**2 + V_RMS_err**2 + 2. * Ish_RMS_err**2 + self.heater.dRdT_err**2
+            )
+            yerr = np.sqrt(
+                self.V3.yerr**2 + V_RMS_err**2 + 2. * Ish_RMS_err**2 + self.heater.dRdT_err**2
+            )
+            self._Z2 = ACReading(x, y, xerr, yerr)
+
+        return self._Z2
+
+    @property
     def power(self) -> ACReading:
-        """RMS complex power (IEEE Std 1459-2010): S = VI* """
+        """average active and reactive power (IEEE Std 1459-2010): S = VI* """
         if self._power is None or self._refresh_dependents:
             x = self.V.x * self.Ish.x + self.V.y * self.Ish.y
             xerr = np.sqrt(

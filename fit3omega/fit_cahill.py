@@ -6,37 +6,28 @@ import fit3omega.plot as plot
 
 
 class FitCahill(BasinhoppingOptimizer):
-
     BOUNDARY_TYPES = ['s', 'i', 'a']
     FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
 
     def __init__(self, sample, data, b_type):
         super().__init__(sample, data)
 
-        self._defaults = (
-            self.sample.heights, self.sample.kys, self.sample.ratio_xys, self.sample.Cvs
-        )
-
-        for lst in self._defaults:
-            self._full_args += lst
-
         if b_type not in FitCahill.BOUNDARY_TYPES:
             raise ValueError("boundary type {} is not one of {}"
                              .format(b_type, FitCahill.BOUNDARY_TYPES))
         self.b_type = b_type
 
-    @property
-    def defaults(self):
-        return self._defaults
-
     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
-        """T2 prediction from physical model and provided properties"""
+        """
+        Synthetic average T2 at each ω, from sample parameters.
+        This is the fit curve function.
+        """
         if not self._integrators_ready or self._refresh_dependents:
             self._init_integrators()
 
-        # extra divisor of ROOT2 since measured T2 amplitudes are RMS
-        P = -1. / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
-        return P * self.integrators.bt_integral(heights, kys, ratio_xys, Cvs)
+        # Using average power to get average temperature
+        p_ave = -self.power.x / (np.pi * self.heater.length * kys[0])
+        return p_ave * self.integrators.bt_integral(heights, kys, ratio_xys, Cvs)
 
     def plot_fit(self, show=False):
         """plot fit result"""
@@ -69,11 +60,3 @@ class FitCahill(BasinhoppingOptimizer):
                                 len(self.sample.layers),
                                 self.b_type.encode('utf-8'))
         self._integrators_ready = True
-
-    def _get_initial_values(self):
-        return [
-            ("heights", self.sample.heights.copy()),
-            ("kys", self.sample.kys.copy()),
-            ("ratio_xys", self.sample.ratio_xys.copy()),
-            ("Cvs", self.sample.Cvs.copy())
-        ]
