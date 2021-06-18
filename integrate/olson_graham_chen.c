@@ -28,9 +28,11 @@ double complex fz(int i_layer, double chi, double omega,
 	double complex z_ii = fz(i_layer+1,chi,omega,ds,kxs,kys,Cvs,Rcs);
 	double complex Phi_ii = Phi(i_layer+1,chi,omega,kxs,kys,Cvs);	
 
-	double complex C1 = kys[i_layer+1] * Phi_ii / HALF_WIDTH;
-	double complex C2 = ctanh(Phi_ii * ds[i_layer+1] / HALF_WIDTH);
-	return Rcs[i_layer] + (C1*z_ii + C2) / (C1 + C1*C1*C2*z_ii);
+	double complex kPhi_b = kys[i_layer+1] * Phi_ii / HALF_WIDTH;
+	double complex tanh_term = ctanh(Phi_ii * ds[i_layer+1] / HALF_WIDTH);
+	double complex z_tilde = z_ii - Rcs[i_layer+1];
+	return Rcs[i_layer] + (kPhi_b * z_tilde - tanh_term)
+	                       / (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term)
 }
 
 
@@ -67,3 +69,9 @@ double complex *ogc_integral(double *ds, double *kxs, double *kys, double *Cvs, 
 	}
 	return ogc_integral_result_;  // pointer to results for each ω
 }
+
+
+// =================================================================================================
+
+
+// derivatives
