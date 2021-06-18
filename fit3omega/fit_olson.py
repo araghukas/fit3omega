@@ -51,8 +51,8 @@ class FitOlson(BasinhoppingOptimizer):
 
         Z2_func_ = self.Z2_func(*args_Z2)
 
-        err = sum((np.abs(self.Z2.x - Z2_func_.real))**2)
-        err += sum((np.abs(self.Z2.y - Z2_func_.imag))**2)
+        err = sum((self.Z2.x - Z2_func_.real)**2)
+        err += sum((self.Z2.y - Z2_func_.imag)**2)
         return err / len(Z2_func_)
 
     def _init_integrators(self):

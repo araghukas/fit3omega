@@ -1,7 +1,6 @@
 import numpy as np
 
 from fit3omega.general import BasinhoppingOptimizer
-from fit3omega.model import ROOT2
 import fit3omega.plot as plot
 
 
@@ -48,8 +47,8 @@ class FitCahill(BasinhoppingOptimizer):
 
         T2_func_ = self.T2_func(*args_T2)
 
-        err = sum(np.abs(self.T2.x - T2_func_.real))
-        err += sum(np.abs(self.T2.y - T2_func_.imag))
+        err = sum((self.T2.x - T2_func_.real)**2)
+        err += sum((self.T2.y - T2_func_.imag)**2)
         return err / len(T2_func_)
 
     def _init_integrators(self):
