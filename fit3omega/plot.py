@@ -167,10 +167,10 @@ def plot_fitted_T2(m, show: bool = False) -> tuple:
     ax.set_xlabel(r"Source Frequency [Hz]")
     ax.set_ylabel(r"$T_{2\omega,rms}$ [K]")
 
-    cs = ["blue", "red", "black"]
-    ls = ["X", "Y", "R"]
+    cs = ["blue", "red"]
+    ls = ["X", "Y"]
 
-    X = m.omegas / 2 / PI
+    X = m.omegas / 2. / PI
     ax.errorbar(X, m.T2.x, m.T2.xerr * m.T2.x,
                 linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
     ax.errorbar(X, m.T2.y, m.T2.yerr * m.T2.y,
@@ -178,6 +178,34 @@ def plot_fitted_T2(m, show: bool = False) -> tuple:
 
     ax.plot(X, m.T2_fit.x, markersize=0, color=cs[0])
     ax.plot(X, m.T2_fit.y, markersize=0, color=cs[1])
+
+    ax.legend(frameon=False)
+
+    ax.set_xscale('log')
+    if show:
+        plt.show()
+    return fig, ax
+
+
+def plot_fitted_Z2(m, show: bool = False) -> tuple:
+    """plot fitted curves against measured Z2 components"""
+    _set_mpl_defaults()
+    fig, ax = plt.subplots(tight_layout=True)
+
+    ax.set_xlabel(r"Source Frequency [Hz]")
+    ax.set_ylabel(r"$Z_{2\omega,rms}$ [K]")
+
+    cs = ["purple", "crimson"]
+    ls = ["X", "Y"]
+
+    X = m.omegas / 2 / PI
+    ax.errorbar(X, m.Z2.x, m.Z2.xerr * m.Z2.x,
+                linewidth=0, elinewidth=.5, color=cs[0], label=ls[0])
+    ax.errorbar(X, m.Z2.y, m.Z2.yerr * m.Z2.y,
+                linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
+
+    ax.plot(X, m.Z2_fit.x, markersize=0, color=cs[0])
+    ax.plot(X, m.Z2_fit.y, markersize=0, color=cs[1])
 
     ax.legend(frameon=False)
 
