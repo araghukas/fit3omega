@@ -48,9 +48,9 @@ double complex fA(int i_layer, double lambda, double omega, double *ds, double *
   double k_ii = kys[i_layer+1];
   double d_i = ds[i_layer];
   
-  double complex C1 = A_ii * k_ii * B_ii / (k_i * B_i);
-  double complex C2 = ctanh(B_i * d_i);
-  return (C1 - C2) / (1 - C1 * C2);
+  double complex AkB = A_ii * k_ii * B_ii / (k_i * B_i);
+  double complex tanh_term = ctanh(B_i * d_i);
+  return (AkB - tanh_term) / (1 - AkB * tanh_term);
 }
 
 
