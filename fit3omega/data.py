@@ -52,7 +52,7 @@ class Data:
                 self._error_file = None
 
         if len(self._data) != len(self._error):
-            raise ValueError("data-error length mismatch")
+            raise ValueError("data vs. error-data length mismatch")
 
     def __len__(self):
         return len(self.data)
