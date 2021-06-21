@@ -6,7 +6,8 @@ C_module = Extension("integrate",
                      sources=["./integrate/integrate.c",
                               "./integrate/util.c",
                               "./integrate/borca_tasciuc.c",
-                              "./integrate/olson_graham_chen.c"],
+                              "./integrate/olson_graham_chen.c",
+                              "./integrate/ogc_derivatives.c"],
                      include_dirs=[np.get_include()])
 
 setup(

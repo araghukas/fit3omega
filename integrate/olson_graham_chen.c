@@ -1,4 +1,5 @@
 #include "integrate.h"
+#include "olson_graham_chen.h"
 
 
 // =================================================================================================
@@ -9,69 +10,72 @@
 // =================================================================================================
 
 
-double complex Phi(int i_layer, double chi, double omega, double *kxs, double *kys, double *Cvs)
+double complex Phi(int i_layer, double chi, double omega)
 {
-  /* OGC Eq. (6) */
-  double b = HALF_WIDTH;
-	return csqrt(kxs[i_layer]/kys[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs[i_layer]/kys[i_layer]);
+    /* OGC Eq. (6) */
+    double b = HALF_WIDTH;
+    return csqrt(kxs_[i_layer]/kys_[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
 }
 
 
-double complex fz(int i_layer, double chi, double omega,
-	                double *ds, double *kxs, double *kys, double *Cvs, double *Rcs)
+double complex *fPhi(double chi, double omega)
 {
-	/* OGC Eq. (5); rearrange for z_n = f(z_n+1) and number top-to-bottom */
-	if (i_layer == N_LAYERS - 1)  // only semi-infinite B.C.
-		return -HALF_WIDTH / (kys[i_layer] * Phi(i_layer,chi,omega,kxs,kys,Cvs));
+	/* OGC Eq. (6); pointer to values for every layer */
+	int i_layer = N_LAYERS - 1;
+	Phi_[i_layer] = Phi(i_layer,chi,omega);
+	i_layer--;
+	while (i_layer >= 0) {
+		Phi_[i_layer] = Phi(i_layer,chi,omega);
+		i_layer--;
+	}
 
-	// recursive call until base case
-	double complex z_ii = fz(i_layer+1,chi,omega,ds,kxs,kys,Cvs,Rcs);
-	double complex Phi_ii = Phi(i_layer+1,chi,omega,kxs,kys,Cvs);	
+	return Phi_;
+}
 
-	double complex kPhi_b = kys[i_layer+1] * Phi_ii / HALF_WIDTH;
-	double complex tanh_term = ctanh(Phi_ii * ds[i_layer+1] / HALF_WIDTH);
-	double complex z_tilde = z_ii - Rcs[i_layer+1];
-	return Rcs[i_layer] + (kPhi_b * z_tilde - tanh_term)
-	                       / (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term)
+
+double complex *fzs(double chi, double omega)
+{
+	/* OGC Eq. (5); (the z w/ no tilde) pointer to values for every layer */
+
+	int i_layer = N_LAYERS - 1;
+	zs_[i_layer] = -HALF_WIDTH / (kys_[i_layer] * Phi(i_layer,chi,omega));
+	i_layer--;
+	while (i_layer >= 0) {
+		double complex P = Phi(i_layer,chi,omega);
+		double complex kPhi_b = kys_[i_layer] * P / HALF_WIDTH;
+		double complex tanh_term = ctanh(P * ds_[i_layer] / HALF_WIDTH);
+		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
+		zs_[i_layer] = (kPhi_b * z_tilde - tanh_term)
+		                / (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term);
+		i_layer--;
+	}
+
+	return zs_;
+}
+
+
+double complex z0(double chi, double omega)
+{
+	/* see above */
+	return fzs(chi, omega)[0];
 }
 
 
 // =================================================================================================
 
 
-double complex ogc_integrand(double chi, double omega,
-	                           double *ds, double *kxs, double *kys, double *Cvs, double *Rcs)
+double complex ogc_integrand(double chi, double omega)
 {
 	/* OGC Eq. (4) integrand */
 	static const double A = 2.0 / M_PI; // 2x because integrand is symmetric in chi [-MAX,MAX]
-	return A * (fz(0,chi,omega,ds,kxs,kys,Cvs,Rcs) + Rcs[0]) * sinc_sq(chi);
+	double complex z_tilde = z0(chi,omega) - Rcs_[0];
+
+	return A * z_tilde * sinc_sq(chi);
 }
 
 
-double complex *ogc_integral(double *ds, double *kxs, double *kys, double *Cvs, double *Rcs)
+double complex *ogc_integral()
 {
 	/* OGC Eq. (4) integral */
-
-	for (int i = 0; i < n_OMEGAS; i++) {
-
-		ogc_integral_result_[i] = 0.0*I;
-		double complex f0 = ogc_integrand(CHIS[0],OMEGAS[i],ds,kxs,kys,Cvs,Rcs);
-		double complex f_prev = f0;
-
-		for (int k = 1; k < N_XPTS; k++) {
-
-			double complex fk = ogc_integrand(CHIS[k],OMEGAS[i],ds,kxs,kys,Cvs,Rcs);
-			double complex dx = CHIS[k] - CHIS[k-1];
-			ogc_integral_result_[i] += (dx / 2.0) * (fk + f_prev);
-			f_prev = fk;
-
-		}
-	}
-	return ogc_integral_result_;  // pointer to results for each ω
+	return trapz(ogc_integrand,CHIS,ogc_integral_result_);
 }
-
-
-// =================================================================================================
-
-
-// derivatives

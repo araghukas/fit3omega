@@ -3,6 +3,8 @@
 #include <Python.h>
 #include <numpy/ndarrayobject.h>
 #include "integrate.h"
+#include "borca_tasciuc.h"
+#include "olson_graham_chen.h"
 
 
 // flags == "Python-side `set` method called successfully; parameters received."
@@ -63,7 +65,7 @@ static PyObject *BT_Integral(PyObject *self, PyObject *args)
     Cvs_[j] = PyFloat_AsDouble(Cv);
   }
 
-  return as_complex_nparray(bt_integral(ds_,kxs_,kys_,Cvs_), n_OMEGAS);
+  return as_complex_nparray(bt_integral(), n_OMEGAS);
 }
 
 
@@ -101,7 +103,7 @@ static PyObject *OGC_Integral(PyObject *self, PyObject * args)
     Rcs_[j] = PyFloat_AsDouble(Rc);
   }
 
-  return as_complex_nparray(ogc_integral(ds_,kxs_,kys_,Cvs_,Rcs_), n_OMEGAS);
+  return as_complex_nparray(ogc_integral(), n_OMEGAS);
 }
 
 
@@ -148,7 +150,7 @@ static PyObject *OGC_Set(PyObject *self, PyObject *args)
   if (N_LAYERS <= 0 || N_LAYERS > MAX_N_LAYERS)
     return NULL;
 
-  n_OMEGAS = (int) PyArray_Size((PyObject *) omegas_Py);
+  n_OMEGAS = PyArray_Size((PyObject *) omegas_Py);
   if (n_OMEGAS <= 0 || n_OMEGAS > MAX_N_OMEGAS)
     return NULL;
 
@@ -192,4 +194,4 @@ PyMODINIT_FUNC PyInit_integrate(void) {
   BT_PARAMS_SET = 0;
   OGC_PARAMS_SET = 0;
   return PyModule_Create(&Integrate_Module);
-}
+};

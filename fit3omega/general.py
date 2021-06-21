@@ -97,6 +97,8 @@ class BasinhoppingOptimizer(Model):
         self._ids = []
 
         self._full_args = []
+        for lst in self.defaults:
+            self._full_args += lst
 
         for i, arg in enumerate(self._full_args):
             if type(arg) is str and arg.endswith('*'):
@@ -116,6 +118,10 @@ class BasinhoppingOptimizer(Model):
         i_arg = index // len(self.sample.heights)
         i_layer = index - i_arg * len(self.sample.heights)
         return i_arg, i_layer
+
+    @property
+    def defaults(self):
+        return tuple(self.sample.__getattribute__(k) for k in self.FIT_ARG_NAMES)
 
     @property
     def fitted_kwargs(self):
@@ -156,7 +162,7 @@ class BasinhoppingOptimizer(Model):
 
     def _record_result(self, fit_result):
         fitted_argv = fit_result.x
-        result = [(name, self.sample.__getattribute__(name).copy()) for name in self.FIT_ARG_NAMES]
+        result = self._get_initial_result()
         for i, index in enumerate(self._fit_indices):
             i_source = index // len(self.sample.heights)
             i_field = index - i_source * len(self.sample.heights)
@@ -167,11 +173,10 @@ class BasinhoppingOptimizer(Model):
         self._result = OptimizerResult(self.sample, self._guesses, fit_result.x, self._ids,
                                        self.FIT_ARG_NAMES)
 
-    # override methods below this line
-    @property
-    def defaults(self):
-        raise NotImplementedError
+    def _get_initial_result(self):
+        return [(name, self.sample.__getattribute__(name).copy()) for name in self.FIT_ARG_NAMES]
 
+    # override methods below this line
     def T2_func(self, **kwargs):
         raise NotImplementedError
 
