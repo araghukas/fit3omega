@@ -29,7 +29,7 @@ double complex *trapz(double complex (*fp)(double,double),
 		for (int k = 1; k < N_XPTS; k++) {
 			double complex fk = fp(xs[k],OMEGAS[i]);
 			double dx = xs[k] - xs[k-1];
-			Fs[i] += (dx / 2.0) * (fk - f_prev);
+			Fs[i] += (dx / 2.0) * (fk + f_prev);
 			f_prev = fk;
 		}
 	}
