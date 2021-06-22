@@ -62,3 +62,17 @@ class FitOlson(BasinhoppingOptimizer):
                                  15.,
                                  len(self.sample.layers))
         self._integrators_ready = True
+
+    def get_current_T2(self):
+        heights = self.sample.heights
+        kys = self.sample.kys
+        ratio_xys = self.sample.ratio_xys
+        Cvs = self.sample.Cvs
+        Rcs = self.sample.Rcs
+
+        T2_complex = self.T2_func(heights, kys, ratio_xys, Cvs, Rcs)
+        T2_x = T2_complex.real
+        T2_y = T2_complex.imag
+        err = (sum(abs(self.T2.x - T2_complex.real))
+               + sum(abs(self.T2.y - T2_complex.imag)))
+        return T2_x, T2_y, err / (2 * len(T2_x))

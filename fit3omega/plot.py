@@ -329,6 +329,7 @@ class SliderPlot(object):
 
         self.model = m
         self.model.set_refresh(True)
+        self.model_type = type(self.model)
         self.fig, self.ax = plt.subplots(figsize=(6, 8))
         self.fig.subplots_adjust(bottom=.5, top=0.95)
         self.param_sliders = {}
@@ -426,17 +427,7 @@ class SliderPlot(object):
         plt.show()
 
     def get_fitline_data(self):
-        heights = self.model.sample.heights
-        kys = self.model.sample.kys
-        ratio_xys = self.model.sample.ratio_xys
-        Cvs = self.model.sample.Cvs
-
-        T2_complex = self.model.T2_func(heights, kys, ratio_xys, Cvs)
-        T2_x = T2_complex.real
-        T2_y = T2_complex.imag
-        err = (sum(abs(self.model.T2.x - T2_complex.real))
-               + sum(abs(self.model.T2.y - T2_complex.imag)))
-        return T2_x, T2_y, err / (2 * len(T2_x))
+        return self.model.get_current_T2()
 
     def _apply_sliders(self, _):
         for label, slider in self.param_sliders.items():

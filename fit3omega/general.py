@@ -189,6 +189,9 @@ class BasinhoppingOptimizer(Model):
     def _init_integrators(self):
         raise NotImplementedError
 
+    def get_current_T2(self):
+        raise NotImplementedError
+
 
 # class FitGeneral(Model):
 #     """

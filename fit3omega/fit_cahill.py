@@ -59,3 +59,16 @@ class FitCahill(BasinhoppingOptimizer):
                                 len(self.sample.layers),
                                 self.b_type.encode('utf-8'))
         self._integrators_ready = True
+
+    def get_current_T2(self):
+        heights = self.sample.heights
+        kys = self.sample.kys
+        ratio_xys = self.sample.ratio_xys
+        Cvs = self.sample.Cvs
+
+        T2_complex = self.T2_func(heights, kys, ratio_xys, Cvs)
+        T2_x = T2_complex.real
+        T2_y = T2_complex.imag
+        err = (sum(abs(self.T2.x - T2_complex.real))
+               + sum(abs(self.T2.y - T2_complex.imag)))
+        return T2_x, T2_y, err / (2 * len(T2_x))
