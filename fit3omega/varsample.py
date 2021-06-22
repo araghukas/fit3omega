@@ -22,7 +22,7 @@ class VarSample(Sample):
         self._kys = [self._parse_item(layer.ky) for layer in self.layers]
         self._ratio_xys = [self._parse_item(layer.ratio_xy) for layer in self.layers]
         self._Cvs = [self._parse_item(layer.Cv) for layer in self.layers]
-        self.Rcs = [self._parse_item(layer.Rc) for layer in self.layers]
+        self._Rcs = [self._parse_item(layer.Rc) for layer in self.layers]
 
     @staticmethod
     def _parse_item(item):
