@@ -64,7 +64,7 @@ double complex bt_integrand(double lambda, double omega)
   /* Borca-Tasciuc Eq. (1) integrand */
   double complex A_top = fA(0,lambda,omega);
   double complex B_top = fB(0,lambda,omega);
-  return 1.0 / (A_top * B_top) * sinc_sq(HALF_WIDTH * lambda);
+  return sinc_sq(HALF_WIDTH * lambda) / (A_top * B_top);
 }
 
 
