@@ -31,7 +31,7 @@ class FitOlson(BasinhoppingOptimizer):
 
     def T2_func(self, heights, kys, ratio_xys, Cvs, Rcs):
         """synthetic average T2 at each ω, from sample parameters"""
-        return self.power.norm * self.Z2_func(heights, kys, ratio_xys, Cvs, Rcs)
+        return -self.power.norm * self.Z2_func(heights, kys, ratio_xys, Cvs, Rcs)
 
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
@@ -58,7 +58,7 @@ class FitOlson(BasinhoppingOptimizer):
     def _init_integrators(self):
         self.integrators.ogc_set(self.omegas,
                                  self.heater.width / 2.0,
-                                 0.,
+                                 1e-6,
                                  15.,
                                  len(self.sample.layers))
         self._integrators_ready = True
