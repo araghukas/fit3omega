@@ -32,25 +32,6 @@ class FitCahill(BasinhoppingOptimizer):
         """plot fit result"""
         return plot.plot_fitted_T2(self, show=show)
 
-    def error_func(self, args) -> float:
-        """objective function for the fit method"""
-        err_args = self._full_args.copy()
-        for j, index in enumerate(self._fit_indices):
-            err_args[index] = args[j]
-
-        # reconstruct T2_func args
-        args_T2 = tuple()
-        for k in range(len(self._full_args) // self.n_layers):
-            i_min = k * self.n_layers
-            i_max = i_min + self.n_layers
-            args_T2 += (err_args[i_min:i_max],)
-
-        T2_func_ = self.T2_func(*args_T2)
-
-        err = sum((self.T2.x - T2_func_.real)**2)
-        err += sum((self.T2.y - T2_func_.imag)**2)
-        return err / len(T2_func_)
-
     def _init_integrators(self):
         self.integrators.bt_set(self.omegas,
                                 self.heater.width / 2,

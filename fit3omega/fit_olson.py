@@ -36,25 +36,6 @@ class FitOlson(BasinhoppingOptimizer):
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
 
-    def error_func(self, args):
-        """objective function for the fit method"""
-        err_args = self._full_args.copy()
-        for j, index in enumerate(self._fit_indices):
-            err_args[index] = args[j]
-
-        # reconstruct Z2_func args
-        args_Z2 = tuple()
-        for k in range(len(self._full_args) // self.n_layers):
-            i_min = k * self.n_layers
-            i_max = i_min + self.n_layers
-            args_Z2 += (err_args[i_min:i_max],)
-
-        Z2_func_ = self.Z2_func(*args_Z2)
-
-        err = sum((self.Z2.x - Z2_func_.real)**2)
-        err += sum((self.Z2.y - Z2_func_.imag)**2)
-        return err / len(Z2_func_)
-
     def _init_integrators(self):
         self.integrators.ogc_set(self.omegas,
                                  self.heater.width / 2.0,
