@@ -5,6 +5,7 @@
 #include "integrate.h"
 #include "borca_tasciuc.h"
 #include "olson_graham_chen.h"
+#include "exceptions.h"
 
 
 // flags == "Python-side `set` method called successfully; parameters received."
@@ -45,11 +46,15 @@ static PyObject *BT_Integral(PyObject *self, PyObject *args)
   PyObject *Py_ratio_xys;
   PyObject *Py_Cvs;
 
-  if (!PyArg_ParseTuple(args,"OOOO",&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs))
+  if (!PyArg_ParseTuple(args,"OOOO",&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs)) {
+    PyErr_SetString(BT_IntegralError, ARGS_ERROR_MSG);
     return NULL;
+   }
 
-  if (PyObject_Length(Py_ds) != N_LAYERS)
+  if (PyObject_Length(Py_ds) != N_LAYERS) {
+    PyErr_SetString(BT_IntegralError, LENGTH_ERROR_MSG);
     return NULL;
+  }
 
   for (int j = 0; j < N_LAYERS; j++) {
     PyObject *d = PyList_GetItem(Py_ds, j);
@@ -80,11 +85,15 @@ static PyObject *OGC_Integral(PyObject *self, PyObject * args)
   PyObject *Py_Cvs;
   PyObject *Py_Rcs;
 
-  if (!PyArg_ParseTuple(args,"OOOOO",&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs,&Py_Rcs))
+  if (!PyArg_ParseTuple(args,"OOOOO",&Py_ds,&Py_kys,&Py_ratio_xys,&Py_Cvs,&Py_Rcs)) {
+    PyErr_SetString(OGC_IntegralError, ARGS_ERROR_MSG);
     return NULL;
+  }
 
-  if (PyObject_Length(Py_ds) != N_LAYERS)
+  if (PyObject_Length(Py_ds) != N_LAYERS) {
+    PyErr_SetString(OGC_IntegralError, LENGTH_ERROR_MSG);
     return NULL;
+  }
 
   for (int j = 0; j < N_LAYERS; j++) {
     PyObject *d = PyList_GetItem(Py_ds, j);
@@ -116,21 +125,29 @@ static PyObject *BT_Set(PyObject *self, PyObject *args)
 {
   PyArrayObject *omegas_Py;
   double lambda_i_, lambda_f_;
-  if (!PyArg_ParseTuple(args,"O!dddic",&PyArray_Type,&omegas_Py,
-                                       &HALF_WIDTH,&lambda_i_,&lambda_f_,&N_LAYERS,&boundary_type_)) // globals
+  if (!PyArg_ParseTuple(args,"O!dddic",
+      &PyArray_Type,&omegas_Py,&HALF_WIDTH,&lambda_i_,&lambda_f_,&N_LAYERS,&boundary_type_)) {
+    PyErr_SetString(BT_SetError, ARGS_ERROR_MSG);
     return NULL;
+  }
 
-  if (N_LAYERS <= 0 || N_LAYERS > MAX_N_LAYERS)
+  if (N_LAYERS <= 0 || N_LAYERS > MAX_N_LAYERS) {
+    PyErr_SetString(N_LAYERS_Error, N_LAYERS_Error_MSG);
     return NULL;
+  }
 
   n_OMEGAS = (int) PyArray_Size((PyObject *) omegas_Py);
-  if (n_OMEGAS <= 0 || n_OMEGAS > MAX_N_OMEGAS)
+  if (n_OMEGAS <= 0 || n_OMEGAS > MAX_N_OMEGAS) {
+    PyErr_SetString(n_OMEGAS_Error, n_OMEGAS_Error_MSG);
     return NULL;
+  }
 
   npy_intp start_index = 0;
   OMEGAS = PyArray_GetPtr(omegas_Py, &start_index); // global
-  if (OMEGAS == NULL)
+  if (OMEGAS == NULL) {
+    PyErr_SetString(NullOmegasError, NullOmegasError_MSG);
     return NULL;
+  }
   Py_INCREF(omegas_Py);
 
   make_logspace(LAMBDAS, lambda_i_, lambda_f_, N_XPTS);
@@ -143,21 +160,28 @@ static PyObject *OGC_Set(PyObject *self, PyObject *args)
 {
   PyArrayObject *omegas_Py;
   double chi_i_, chi_f_;
-  if (!PyArg_ParseTuple(args,"O!dddi",&PyArray_Type,&omegas_Py,
-                                       &HALF_WIDTH,&chi_i_,&chi_f_,&N_LAYERS)) // globals
+  if (!PyArg_ParseTuple(args,"O!dddi",
+      &PyArray_Type,&omegas_Py,&HALF_WIDTH,&chi_i_,&chi_f_,&N_LAYERS)) {
+    PyErr_SetString(OGC_SetError, ARGS_ERROR_MSG);
     return NULL;
+  }
 
-  if (N_LAYERS <= 0 || N_LAYERS > MAX_N_LAYERS)
+  if (N_LAYERS <= 0 || N_LAYERS > MAX_N_LAYERS) {
+    PyErr_SetString(N_LAYERS_Error, N_LAYERS_Error_MSG);
     return NULL;
-
+  }
   n_OMEGAS = PyArray_Size((PyObject *) omegas_Py);
-  if (n_OMEGAS <= 0 || n_OMEGAS > MAX_N_OMEGAS)
+  if (n_OMEGAS <= 0 || n_OMEGAS > MAX_N_OMEGAS) {
+    PyErr_SetString(n_OMEGAS_Error, n_OMEGAS_Error_MSG);
     return NULL;
+  }
 
   npy_intp start_index = 0;
   OMEGAS = PyArray_GetPtr(omegas_Py, &start_index); // global
-  if (OMEGAS == NULL)
+  if (OMEGAS == NULL) {
+    PyErr_SetString(NullOmegasError, NullOmegasError_MSG);
     return NULL;
+  }
   Py_INCREF(omegas_Py);
 
   make_logspace(CHIS, chi_i_, chi_f_, N_XPTS);
@@ -191,6 +215,8 @@ static PyModuleDef Integrate_Module = {
 
 PyMODINIT_FUNC PyInit_integrate(void) {
   import_array();
+  init_exceptions();
+
   BT_PARAMS_SET = 0;
   OGC_PARAMS_SET = 0;
   return PyModule_Create(&Integrate_Module);
