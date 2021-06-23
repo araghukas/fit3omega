@@ -101,10 +101,13 @@ class BasinhoppingOptimizer(Model):
             self._full_args += lst
 
         for i, arg in enumerate(self._full_args):
-            if type(arg) is str and arg.endswith('*'):
-                self._fit_indices.append(i)
-                self._guesses.append(float(arg.rstrip('*')))
-                self._ids.append(self._identify_fit_index(i))
+            if type(arg) is str:
+                if arg.endswith('*'):
+                    self._fit_indices.append(i)
+                    self._guesses.append(float(arg.rstrip('*')))
+                    self._ids.append(self._identify_fit_index(i))
+                else:
+                    raise ValueError("invalid sample parameter '%s'" % arg)
 
         self._integrators_ready = False
         self._result = None
