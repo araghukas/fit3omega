@@ -85,7 +85,7 @@ class BasicPrinterCallBack:
 
 
 class BasinhoppingOptimizer(Model):
-    FIT_ARG_NAMES = []
+    FIT_PARAMS = []
 
     def __init__(self, sample, data):
         super().__init__(sample, data)
@@ -115,13 +115,15 @@ class BasinhoppingOptimizer(Model):
         self.integrators = __import__('integrate')
 
     def _identify_fit_index(self, index) -> tuple:
-        i_arg = index // len(self.sample.heights)
-        i_layer = index - i_arg * len(self.sample.heights)
+        n_layers = len(self.sample.heights)
+        i_arg = index // n_layers
+        i_layer = index - i_arg * n_layers
         return i_arg, i_layer
 
     @property
     def defaults(self):
-        return tuple(self.sample.__getattribute__(k) for k in self.FIT_ARG_NAMES)
+        # lists of starting values for applicable fit parameters
+        return tuple(self.sample.__getattribute__(k) for k in self.FIT_PARAMS)
 
     @property
     def fitted_kwargs(self):
@@ -149,17 +151,7 @@ class BasinhoppingOptimizer(Model):
 
     def error_func(self, args) -> float:
         """objective function for the fit method"""
-        err_args = self._full_args.copy()
-        for j, index in enumerate(self._fit_indices):
-            err_args[index] = args[j]
-
-        # reconstruct T2_func args
-        args_T2 = tuple()
-        for k in range(len(self._full_args) // self.n_layers):
-            i_min = k * self.n_layers
-            i_max = i_min + self.n_layers
-            args_T2 += (err_args[i_min:i_max],)
-
+        args_T2 = self._sub_args_into_complete_params(args)
         T2_func_ = self.T2_func(*args_T2)
 
         err = sum(((self.T2.x - T2_func_.real) / self.T2.norm)**2
@@ -179,6 +171,21 @@ class BasinhoppingOptimizer(Model):
                                   callback=callback)
         self._record_result(fit_result)
 
+    def _sub_args_into_complete_params(self, args) -> tuple:
+        """produces a tuple of all arguments for `T2_func` from a partial args list"""
+        err_args = self._full_args.copy()
+        for j, index in enumerate(self._fit_indices):  # `self._fit_indices` provides mapping
+            err_args[index] = args[j]
+
+        # reconstruct T2_func args
+        args_T2 = tuple()
+        for k in range(len(self._full_args) // self.n_layers):
+            i_min = k * self.n_layers
+            i_max = i_min + self.n_layers
+            args_T2 += (err_args[i_min:i_max],)
+
+        return args_T2
+
     def _record_result(self, fit_result):
         fitted_argv = fit_result.x
         result = self._get_initial_result()
@@ -190,10 +197,10 @@ class BasinhoppingOptimizer(Model):
         self._fitted_kwargs = {r[0]: r[1] for r in result}
         self._error = fit_result.fun
         self._result = OptimizerResult(self.sample, self._guesses, fit_result.x, self._ids,
-                                       self.FIT_ARG_NAMES)
+                                       self.FIT_PARAMS)
 
     def _get_initial_result(self):
-        return [(name, self.sample.__getattribute__(name).copy()) for name in self.FIT_ARG_NAMES]
+        return [(name, self.sample.__getattribute__(name).copy()) for name in self.FIT_PARAMS]
 
     # override methods below this line
     def T2_func(self, *args, **kwargs):
