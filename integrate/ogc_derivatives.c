@@ -43,9 +43,7 @@ double complex *fdz0_dky(double complex *zs, double complex *Xis)
 
 	for (int j = i_layer-1; j >= 0; j--)
 		dz0_dky_[i_layer] *= Xis[j];
-
-
-	dz0_dky_[i_layer] *= -zs[i_layer];
+	dz0_dky_[i_layer] *= -zs[i_layer];  // z_tilde is 0 for substrate
 
 	i_layer--;
 	while (i_layer >= 0) {
@@ -53,7 +51,7 @@ double complex *fdz0_dky(double complex *zs, double complex *Xis)
 		for (int j = i_layer-1; j >= 0; j--)
 			dz0_dky_[i_layer] *= Xis[j];
 
-		double complex z_tilde =zs[i_layer+1] - Rcs_[i_layer+1];
+		double complex z_tilde = zs[i_layer+1] - Rcs_[i_layer+1];
 		dz0_dky_[i_layer] *= (Xis[i_layer]*z_tilde - zs[i_layer]);
 		i_layer--;
 	}
@@ -118,13 +116,9 @@ double complex *fdz0_dCv(double chi, double omega, double complex *Phis, double 
 
 
 
-double complex *fdz0_dkx(double chi, double omega, double complex *Phis, double complex *zs, double complex *Xis)
+double complex *fdz0_dpsi_(double chi, double omega, double complex *Phis, double complex *zs, double complex *Xis)
 {
-	/*
-	OGC Eq. (14); for all layers at (χ,ω)
-
-	Note: dz/dkx = -(dψ/dkx) / (dψ/dz) = -1/ky * dz/dψ
-	*/
+	/* OGC Eq. (14); for all layers at (χ,ω) */
 
 	int i_layer = N_LAYERS - 1;
 
@@ -137,36 +131,36 @@ double complex *fdz0_dkx(double chi, double omega, double complex *Phis, double 
 
 	ky = kys_[i_layer];
 	Cv = Cvs_[i_layer];
-	dz0_dkx_[i_layer] = -1.0 / ky;  // chain rule factor
+	dz0_dpsi_[i_layer] = 1.0;  // chain rule factor
 
 	for (int j = i_layer-1; j >= 0; j--)
-		dz0_dkx_[i_layer] *= Xis[j];
+		dz0_dpsi_[i_layer] *= Xis[j];
 
 	P = Phis[i_layer];
-	dz0_dkx_[i_layer] *=  chi*chi/(2.0*P*P);
+	dz0_dpsi_[i_layer] *=  chi*chi/(2.0*P*P);
 
 	z = zs[i_layer];
-	dz0_dkx_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
+	dz0_dpsi_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
 
 	i_layer--;
 	while (i_layer >= 0) {
 		ky = kys_[i_layer];
 		Cv = Cvs_[i_layer];
-		dz0_dkx_[i_layer] = -1.0 / ky;
+		dz0_dpsi_[i_layer] = 1.0;
 
 		for (int j = i_layer-1; j >= 0; j--)
-			dz0_dkx_[i_layer] *= Xis[j];
+			dz0_dpsi_[i_layer] *= Xis[j];
 
 		P = Phis[i_layer];
-		dz0_dkx_[i_layer] *=  chi*chi/(2.0*P*P);
+		dz0_dpsi_[i_layer] *=  chi*chi/(2.0*P*P);
 
 		z = zs[i_layer];
 		double complex z_tilde = zs[i_layer+1] - Rcs_[i_layer+1];
-		dz0_dkx_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis[i_layer]*z_tilde - z;
+		dz0_dpsi_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis[i_layer]*z_tilde - z;
 		i_layer--;
 	}
 
-	return dz0_dkx_;
+	return fdz0_dpsi_;
 }
 
 
@@ -178,7 +172,7 @@ double complex *dz0_dRc(double complex *Xis)
 	while (i_layer >= 0) {
 		dz0_dRc_[i_layer] = -Xis[i_layer];
 		for (int j = i_layer-1; j >= 0; j--)
-			dz0_dkx_[i_layer] *= Xis[j];
+			dz0_dRc_[i_layer] *= Xis[j];
 		i_layer--;
 	}
 
@@ -188,15 +182,42 @@ double complex *dz0_dRc(double complex *Xis)
 
 // ================================================================================================
 
+/*
+    JUST EXPOSE INTEGRATORS OF THE ABOVE
+    MATRIX WILL NOT BE SO NEATLY ORDERED IN GENERAL
+    DON'T WANT TO COMPUTE ENTIRE THING EVERY TIME
+
+    DO IT IN PYTHON
+*/
 
 double complex **dZ_dX() {
 	/*
-		{{ dZ/dky_0, ... , dZ/dky_N-1 },
-		 { dZ/dCv_0, ... , dZ/dCv_N-1 },
-		 { dZ/dkx_0, ... , dZ/dkx_N-1 },
-		 { dZ/dRc_0, ... , dZ/dRc_N-1 }}
+		{{ dZ/dky_0 , ... , dZ/dky[N-1]   },
+		 { dZ/dpsi_0, ... , dZ/dpsi_[N-1] },
+		 { dZ/dCv_0 , ... , dZ/dCv[N-1]   },
+		 { dZ/dRc_0 , ... , dZ/dRc_[N-1]  }}
 	*/
-	return 0;
+	for (int i = 0; i < N_LAYERS; i++) {       // NO... LOOP OVER N_PARAMS
+	    for (int j = 0; j < n_OMEGAS; j++) {
+            switch (i)
+            {
+                case 0:
+                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
+                    break;
+                case 1:
+                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
+                    break;
+                case 2:
+                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
+                    break;
+                case 3:
+                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
+                    break;
+            }
+	    }
+	}
+
+	return dZ_matrix_;
 }
 
 

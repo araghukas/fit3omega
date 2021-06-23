@@ -21,12 +21,5 @@ double complex *fXis(double chi, double omega, double complex *Phis, double comp
 
 double complex dz0_dky_[MAX_N_LAYERS];
 double complex dz0_dCv_[MAX_N_LAYERS];
-double complex dz0_dkx_[MAX_N_LAYERS];
+double complex dz0_dpsi_[MAX_N_LAYERS];
 double complex dz0_dRc_[MAX_N_LAYERS];
-
-/*
-	{{ dZ/dky_0, ... , dZ/dky_N-1 },
-	 { dZ/dCv_0, ... , dZ/dCv_N-1 },
-	 { dZ/dkx_0, ... , dZ/dkx_N-1 },
-	 { dZ/dRc_0, ... , dZ/dRc_N-1 }}
-*/

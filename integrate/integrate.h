@@ -27,3 +27,10 @@ double kxs_[MAX_N_LAYERS];  // x-thermal conductivity
 double kys_[MAX_N_LAYERS];  // y-thermal conductivity
 double Cvs_[MAX_N_LAYERS];  // heat capacities
 double Rcs_[MAX_N_LAYERS];  // thermal contact resistances
+/*
+	{{ dZ/dky_0, ... , dZ/dky_N-1 },
+	 { dZ/dCv_0, ... , dZ/dCv_N-1 },
+	 { dZ/dkx_0, ... , dZ/dkx_N-1 },
+	 { dZ/dRc_0, ... , dZ/dRc_N-1 }}
+*/
+double complex dZ_matrix_[MAX_N_OMEGAS][MAX_N_LAYERS];  // Jacobian matrix
