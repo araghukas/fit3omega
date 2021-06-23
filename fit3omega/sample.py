@@ -106,11 +106,11 @@ class Shunt(NamedTuple):
 class Layer(NamedTuple):
     """properties of a layer in the thermal model"""
     name: str
-    height: float
-    ky: float
-    ratio_xy: float
-    Cv: float        # heat capacity [J/m^3/K]
-    Rc: float = 0.0  # Olson model only, thermal contact resistance to layer below
+    height: str or float
+    ky: str or float
+    ratio_xy: str or float
+    Cv: str or float        # heat capacity [J/m^3/K]
+    Rc: str or float = 0.0  # Olson model only, thermal contact resistance to layer below
 
     def as_dict(self):
         return {

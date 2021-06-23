@@ -91,13 +91,14 @@ class BasinhoppingOptimizer(Model):
         super().__init__(sample, data)
         self.n_layers = len(self.sample.layers)
         self._full_args = None
+        self._config_values = None
 
         self._fit_indices = []
         self._guesses = []
         self._ids = []
 
         self._full_args = []
-        for lst in self.defaults:
+        for lst in self.config_values:
             self._full_args += lst
 
         for i, arg in enumerate(self._full_args):
@@ -124,9 +125,11 @@ class BasinhoppingOptimizer(Model):
         return i_arg, i_layer
 
     @property
-    def defaults(self):
+    def config_values(self):
         # lists of starting values for applicable fit parameters
-        return tuple(self.sample.__getattribute__(k) for k in self.FIT_PARAMS)
+        if self._config_values is None:
+            self._config_values = tuple(self.sample.__getattribute__(k) for k in self.FIT_PARAMS)
+        return self._config_values
 
     @property
     def fitted_kwargs(self):

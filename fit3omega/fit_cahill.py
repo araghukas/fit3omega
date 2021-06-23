@@ -6,7 +6,7 @@ import fit3omega.plot as plot
 
 class FitCahill(BasinhoppingOptimizer):
     BOUNDARY_TYPES = ['s', 'i', 'a']
-    FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
+    FIT_PARAMS = ["heights", "kys", "ratio_xys", "Cvs"]
 
     def __init__(self, sample, data, b_type):
         super().__init__(sample, data)

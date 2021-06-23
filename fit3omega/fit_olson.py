@@ -5,20 +5,28 @@ import fit3omega.plot as plot
 
 
 class FitOlson(BasinhoppingOptimizer):
-    FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs", "Rcs"]
+    FIT_PARAMS = ["kys", "ratio_xys", "Cvs", "Rcs"]
 
     def __init__(self, sample, data):
         super().__init__(sample, data)
 
-        self._defaults = (
-            self.sample.heights,
+        # clean up any heights targeted for fit (hence read into a str)
+        heights = []
+        for height in self.sample.heights:
+            if type(height) is str:
+                heights.append(float(height.rstrip('*')))
+            else:
+                heights.append(height)
+
+        self._config_values = (
+            heights,
             self.sample.kys,
             self.sample.ratio_xys,
             self.sample.Cvs,
             self.sample.Rcs
         )
 
-    def Z2_func(self, heights, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
+    def Z2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
         """
         Synthetic Z2 prediction from model and sample properties.
         This is the fit curve function.
@@ -27,11 +35,17 @@ class FitOlson(BasinhoppingOptimizer):
             self._init_integrators()
 
         area = self.heater.width * self.heater.length
-        return self.integrators.ogc_integral(heights, kys, ratio_xys, Cvs, Rcs) / area
+        return self.integrators.ogc_integral(self.config_values[0], kys, ratio_xys, Cvs, Rcs) / area
 
-    def T2_func(self, heights, kys, ratio_xys, Cvs, Rcs):
+    def Z2_func_jac(self, ids) -> np.ndarray:
+        """
+        Jacobian matrix for the above function
+        """
+        return np.zeros(1)
+
+    def T2_func(self, kys, ratio_xys, Cvs, Rcs):
         """synthetic average T2 at each ω, from sample parameters"""
-        return -self.power.norm * self.Z2_func(heights, kys, ratio_xys, Cvs, Rcs)
+        return -self.power.norm * self.Z2_func(kys, ratio_xys, Cvs, Rcs)
 
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
