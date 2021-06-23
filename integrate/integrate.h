@@ -23,7 +23,7 @@ double HALF_WIDTH;      // heater half-width
 
 // 5 layer parameters in general
 double ds_[MAX_N_LAYERS];   // heights
-double kxs_[MAX_N_LAYERS];  // x-thermal conductivity
+double psis_[MAX_N_LAYERS];  // (x/y)-thermal conductivity ratio
 double kys_[MAX_N_LAYERS];  // y-thermal conductivity
 double Cvs_[MAX_N_LAYERS];  // heat capacities
 double Rcs_[MAX_N_LAYERS];  // thermal contact resistances

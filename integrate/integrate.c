@@ -64,7 +64,7 @@ static PyObject *BT_Integral(PyObject *self, PyObject *args)
     kys_[j] = PyFloat_AsDouble(ky);
 
     PyObject *rat = PyList_GetItem(Py_ratio_xys, j);
-    kxs_[j] = PyFloat_AsDouble(rat) * kys_[j];
+    psis_[j] = PyFloat_AsDouble(rat);
 
     PyObject *Cv = PyList_GetItem(Py_Cvs, j);
     Cvs_[j] = PyFloat_AsDouble(Cv);
@@ -103,7 +103,7 @@ static PyObject *OGC_Integral(PyObject *self, PyObject * args)
     kys_[j] = PyFloat_AsDouble(ky);
 
     PyObject *rat = PyList_GetItem(Py_ratio_xys, j);
-    kxs_[j] = PyFloat_AsDouble(rat) * kys_[j];
+    psis_[j] = PyFloat_AsDouble(rat);
 
     PyObject *Cv = PyList_GetItem(Py_Cvs, j);
     Cvs_[j] = PyFloat_AsDouble(Cv);

@@ -14,7 +14,7 @@ double complex Phi(int i_layer, double chi, double omega)
 {
     /* OGC Eq. (6) */
     double b = HALF_WIDTH;
-    return csqrt(kxs_[i_layer]/kys_[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
+    return csqrt(psis_[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
 }
 
 

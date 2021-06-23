@@ -13,7 +13,7 @@
 double complex fB(int i_layer, double lambda, double omega)
 {
   /* Borca-Tasciuc Eq. (3) */
-  return csqrt(kxs_[i_layer]/kys_[i_layer]*lambda*lambda
+  return csqrt(psis_[i_layer]*lambda*lambda
   	           + I*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
 }
 

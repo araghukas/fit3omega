@@ -160,11 +160,11 @@ double complex *fdz0_dpsi_(double chi, double omega, double complex *Phis, doubl
 		i_layer--;
 	}
 
-	return fdz0_dpsi_;
+	return dz0_dpsi_;
 }
 
 
-double complex *dz0_dRc(double complex *Xis)
+double complex *fdz0_dRc(double complex *Xis)
 {
 	/* OGC Eq. (15); for all layers at (χ,ω) */
 	int i_layer = N_LAYERS - 1;
@@ -189,38 +189,3 @@ double complex *dz0_dRc(double complex *Xis)
 
     DO IT IN PYTHON
 */
-
-double complex **dZ_dX() {
-	/*
-		{{ dZ/dky_0 , ... , dZ/dky[N-1]   },
-		 { dZ/dpsi_0, ... , dZ/dpsi_[N-1] },
-		 { dZ/dCv_0 , ... , dZ/dCv[N-1]   },
-		 { dZ/dRc_0 , ... , dZ/dRc_[N-1]  }}
-	*/
-	for (int i = 0; i < N_LAYERS; i++) {       // NO... LOOP OVER N_PARAMS
-	    for (int j = 0; j < n_OMEGAS; j++) {
-            switch (i)
-            {
-                case 0:
-                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
-                    break;
-                case 1:
-                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
-                    break;
-                case 2:
-                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
-                    break;
-                case 3:
-                    trapz(fdz0_dky,CHIS,dZ_matrix_[i]);
-                    break;
-            }
-	    }
-	}
-
-	return dZ_matrix_;
-}
-
-
-
-
-
