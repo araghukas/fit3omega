@@ -21,15 +21,15 @@ double complex Phi(int i_layer, double chi, double omega)
 double complex *fPhi(double chi, double omega)
 {
 	/* OGC Eq. (6); pointer to values for every layer */
-	int i_layer = N_LAYERS - 1;
-	Phi_[i_layer] = Phi(i_layer,chi,omega);
+	int i_layer = n_LAYERS - 1;
+	Phis_[i_layer] = Phi(i_layer,chi,omega);
 	i_layer--;
 	while (i_layer >= 0) {
-		Phi_[i_layer] = Phi(i_layer,chi,omega);
+		Phis_[i_layer] = Phi(i_layer,chi,omega);
 		i_layer--;
 	}
 
-	return Phi_;
+	return Phis_;
 }
 
 
@@ -37,7 +37,7 @@ double complex *fzs(double chi, double omega)
 {
 	/* OGC Eq. (5); (the z w/ no tilde) pointer to values for every layer */
 
-	int i_layer = N_LAYERS - 1;
+	int i_layer = n_LAYERS - 1;
 	zs_[i_layer] = -HALF_WIDTH / (kys_[i_layer] * Phi(i_layer,chi,omega));
 	i_layer--;
 	while (i_layer >= 0) {
@@ -74,7 +74,7 @@ double complex ogc_integrand(double chi, double omega)
 }
 
 
-double complex *ogc_integral()
+double complex *ogc_integral(void)
 {
 	/* OGC Eq. (4) integral */
 	return trapz(ogc_integrand,CHIS,ogc_integral_result_);

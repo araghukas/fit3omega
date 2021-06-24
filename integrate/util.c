@@ -36,3 +36,20 @@ double complex *trapz(double complex (*fp)(double,double),
 
 	return Fs;
 }
+
+
+// same as above, except function values provided, not function pointer
+double complex *val_trapz(double complex *fs, double *xs, double complex *Fs)
+{
+	for (int i = 0; i < n_OMEGAS; i++) {
+		Fs[i] = 0.0*I;
+		double complex f_prev = fs[0];
+		for (int k = 1; k < N_XPTS; k++) {
+			double dx = xs[k] - xs[k-1];
+			Fs[i] += (dx / 2.0) * (f[k] - f_prev);
+			f_prev = f[k];
+		}
+	}
+
+	return Fs;
+}

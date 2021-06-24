@@ -21,7 +21,7 @@ double complex fA(int i_layer, double lambda, double omega)
 {
   /* Borca-Tasciuc Eq. (2); with i -> i+1 */
   // base case - depends_ on boundary type
-  if (i_layer == N_LAYERS - 1) {
+  if (i_layer == n_LAYERS - 1) {
     switch (boundary_type_)
     {
       case 's':
@@ -68,7 +68,7 @@ double complex bt_integrand(double lambda, double omega)
 }
 
 
-double complex *bt_integral()
+double complex *bt_integral(void)
 {
 	/* Borca-Tasciuc Eq. (1) integral */
 	return trapz(bt_integrand,LAMBDAS,bt_integral_result_);

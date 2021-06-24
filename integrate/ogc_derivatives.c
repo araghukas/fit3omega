@@ -1,5 +1,6 @@
 #include "integrate.h"
 #include "olson_graham_chen.h"
+#include "exceptions.h"
 
 
 // =================================================================================================
@@ -12,8 +13,8 @@
 
 double complex *fXis(double chi, double omega, double complex *Phis, double complex *zs)
 {
-    /* OGC Eq. (11); chain rule terms for all layers at (χ,ω) */
-	int i_layer = N_LAYERS - 1;
+	/* OGC Eq. (11); chain rule terms for all layers at (χ,ω) */
+	int i_layer = n_LAYERS - 1;
 	Xis_[i_layer] = 0.0*I;
 
 	i_layer--;
@@ -37,7 +38,7 @@ double complex *fXis(double chi, double omega, double complex *Phis, double comp
 double complex *fdz0_dky(double complex *zs, double complex *Xis)
 {
 	/* OGC Eq. (12); for all layers at (χ,ω) */
-	int i_layer = N_LAYERS - 1;
+	int i_layer = n_LAYERS - 1;
 
 	dz0_dky_[i_layer] = 1.0 / kys_[i_layer] + 0.0*I;
 
@@ -68,10 +69,10 @@ double complex *fdz0_dCv(double chi, double omega, double complex *Phis, double 
 	Note: dz/dCv = dz/da * da/dCv = (-ky / Cv^2) * dz/da
 	*/
 
-	int i_layer = N_LAYERS - 1;
+	int i_layer = n_LAYERS - 1;
 
 	const double b = HALF_WIDTH;
-	const double H = ds_[N_LAYERS-1];
+	const double H = ds_[n_LAYERS-1];
 	double ky;
 	double Cv;
 	double complex z;
@@ -120,10 +121,10 @@ double complex *fdz0_dpsi_(double chi, double omega, double complex *Phis, doubl
 {
 	/* OGC Eq. (14); for all layers at (χ,ω) */
 
-	int i_layer = N_LAYERS - 1;
+	int i_layer = n_LAYERS - 1;
 
 	const double b = HALF_WIDTH;
-	const double H = ds_[N_LAYERS-1];
+	const double H = ds_[n_LAYERS-1];
 	double ky;
 	double Cv;
 	double complex z;
@@ -167,7 +168,7 @@ double complex *fdz0_dpsi_(double chi, double omega, double complex *Phis, doubl
 double complex *fdz0_dRc(double complex *Xis)
 {
 	/* OGC Eq. (15); for all layers at (χ,ω) */
-	int i_layer = N_LAYERS - 1;
+	int i_layer = n_LAYERS - 1;
 
 	while (i_layer >= 0) {
 		dz0_dRc_[i_layer] = -Xis[i_layer];
@@ -182,10 +183,26 @@ double complex *fdz0_dRc(double complex *Xis)
 
 // ================================================================================================
 
-/*
-    JUST EXPOSE INTEGRATORS OF THE ABOVE
-    MATRIX WILL NOT BE SO NEATLY ORDERED IN GENERAL
-    DON'T WANT TO COMPUTE ENTIRE THING EVERY TIME
+double complex **jac_Z(void)
+{
 
-    DO IT IN PYTHON
-*/
+	for (int i = 0; i < n_OMEGAS; i++) {
+		for (int n = 0; n < n_PARAMS; n++) {
+
+			double complex *row = jac_J_result_[n];
+			
+			for (int k = 0; k < N_XPTS; k++) {
+				double chi = CHIS[k];
+				double omega = OMEGAS[i];
+				Phis_ = fPhis(chi,omega);
+				zs_ = fzs(chi,omega);
+				Xis_ = fXis(chi,omega,Phis_,zs_);
+			}
+
+		}
+	}
+
+	return jac_Z_result_;
+}
+
+

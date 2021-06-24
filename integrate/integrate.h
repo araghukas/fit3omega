@@ -1,8 +1,8 @@
 #include <math.h>
 #include <complex.h>
 
-#define MAX_N_LAYERS 10
-#define MAX_N_OMEGAS 150
+#define MAX_n_LAYERS 10
+#define MAX_n_OMEGAS 150
 #define N_XPTS       200  // number of x sample points for integrations
 
 
@@ -10,27 +10,23 @@
 const double *OMEGAS;
 int n_OMEGAS;
 
+// maximum number of fitting parameters (for either method)
+const int MAX_n_PARAMS = 4 * MAX_n_LAYERS;
 
 // utility functions
 void make_logspace(double *arr, double min, double max, int size);
 double sinc_sq(double x);
 double complex *trapz(double complex (*fp)(double,double), double *xs, double complex *Fs);
+double complex *val_trapz(double complex *fs, double *xs, double complex *Fs);
 
 
 // sample parameters (set from Python side)
-int N_LAYERS;  // number of layers
-double HALF_WIDTH;      // heater half-width
+int n_LAYERS;       // number of layers
+double HALF_WIDTH;  // heater half-width
 
 // 5 layer parameters in general
-double ds_[MAX_N_LAYERS];   // heights
-double psis_[MAX_N_LAYERS];  // (x/y)-thermal conductivity ratio
-double kys_[MAX_N_LAYERS];  // y-thermal conductivity
-double Cvs_[MAX_N_LAYERS];  // heat capacities
-double Rcs_[MAX_N_LAYERS];  // thermal contact resistances
-/*
-	{{ dZ/dky_0, ... , dZ/dky_N-1 },
-	 { dZ/dCv_0, ... , dZ/dCv_N-1 },
-	 { dZ/dkx_0, ... , dZ/dkx_N-1 },
-	 { dZ/dRc_0, ... , dZ/dRc_N-1 }}
-*/
-double complex dZ_matrix_[MAX_N_OMEGAS][MAX_N_LAYERS];  // Jacobian matrix
+double ds_[MAX_n_LAYERS];   // heights
+double psis_[MAX_n_LAYERS];  // (x/y)-thermal conductivity ratio
+double kys_[MAX_n_LAYERS];  // y-thermal conductivity
+double Cvs_[MAX_n_LAYERS];  // heat capacities
+double Rcs_[MAX_n_LAYERS];  // thermal contact resistances
