@@ -18,9 +18,9 @@ double complex Phi(int i_layer, double chi, double omega)
 }
 
 
-double complex *fPhi(double chi, double omega)
+void fPhis(double chi, double omega)
 {
-	/* OGC Eq. (6); pointer to values for every layer */
+	/* OGC Eq. (6);  for all layers at (χ,ω) */
 	int i_layer = n_LAYERS - 1;
 	Phis_[i_layer] = Phi(i_layer,chi,omega);
 	i_layer--;
@@ -28,14 +28,12 @@ double complex *fPhi(double chi, double omega)
 		Phis_[i_layer] = Phi(i_layer,chi,omega);
 		i_layer--;
 	}
-
-	return Phis_;
 }
 
 
-double complex *fzs(double chi, double omega)
+void fzs(double chi, double omega)
 {
-	/* OGC Eq. (5); (the z w/ no tilde) pointer to values for every layer */
+	/* OGC Eq. (5); (the z w/ no tilde) for all layers at (χ,ω)  */
 
 	int i_layer = n_LAYERS - 1;
 	zs_[i_layer] = -HALF_WIDTH / (kys_[i_layer] * Phi(i_layer,chi,omega));
@@ -49,15 +47,14 @@ double complex *fzs(double chi, double omega)
 		                / (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term);
 		i_layer--;
 	}
-
-	return zs_;
 }
 
 
 double complex z0(double chi, double omega)
 {
 	/* see above */
-	return fzs(chi, omega)[0];
+	fzs(chi,omega);
+	return zs_[0];
 }
 
 

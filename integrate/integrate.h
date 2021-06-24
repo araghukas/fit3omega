@@ -11,7 +11,7 @@ const double *OMEGAS;
 int n_OMEGAS;
 
 // maximum number of fitting parameters (for either method)
-const int MAX_n_PARAMS = 4 * MAX_n_LAYERS;
+static const int MAX_n_PARAMS = 4 * MAX_n_LAYERS;
 
 // utility functions
 void make_logspace(double *arr, double min, double max, int size);

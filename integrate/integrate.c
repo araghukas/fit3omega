@@ -7,6 +7,8 @@
 #include "olson_graham_chen.h"
 #include "exceptions.h"
 
+#include <stdio.h>
+
 
 // flags == "Python-side `set` method called successfully; parameters received."
 int BT_PARAMS_SET;
@@ -22,10 +24,17 @@ int OGC_PARAMS_SET;
 // =================================================================================================
 
 
-static PyObject *as_complex_nparray(double complex *arr, int size)
+static PyObject *as_complex_1darray(double complex *arr, int size)
 {
-	const npy_intp dims = size;
-	return PyArray_SimpleNewFromData(1, &dims, NPY_COMPLEX128, arr);
+	const npy_intp dims[] = { size };
+	return PyArray_SimpleNewFromData(1, dims, NPY_COMPLEX128, arr);
+}
+
+
+static PyObject *as_complex_2darray(double complex arr[][MAX_n_OMEGAS], int n_rows, int n_cols)
+{
+	const npy_intp dims[] = { n_rows, n_cols };
+	return PyArray_SimpleNewFromData(2, dims, NPY_COMPLEX128, arr);
 }
 
 
@@ -76,7 +85,7 @@ static PyObject *BT_Integral(PyObject *self, PyObject *args)
 		Cvs_[j] = PyFloat_AsDouble(Cv);
 	}
 
-	return as_complex_nparray(bt_integral(), n_OMEGAS);
+	return as_complex_1darray(bt_integral(), n_OMEGAS);
 }
 
 
@@ -125,7 +134,7 @@ static PyObject *OGC_Integral(PyObject *self, PyObject *args)
 		Rcs_[j] = PyFloat_AsDouble(Rc);
 	}
 
-	return as_complex_nparray(ogc_integral(), n_OMEGAS);
+	return as_complex_1darray(ogc_integral(), n_OMEGAS);
 }
 
 
@@ -174,7 +183,7 @@ static PyObject *OGC_Integral_Der(PyObject* self, PyObject *args)
 		Rcs_[j] = PyFloat_AsDouble(Rc);
 	}
 
-	return ;
+	return as_complex_2darray(jac_Z(), n_PARAMS, n_OMEGAS);
 }
 
 
@@ -287,6 +296,7 @@ static PyMethodDef Integrate_FunctionsTable[] = {
 	{"ogc_set", OGC_Set, METH_VARARGS, "mandatory initializer method"},
 	{"bt_integral", BT_Integral, METH_VARARGS, "computes the integral term in Borca-Tascuic Eq. (1)"},
 	{"ogc_integral", OGC_Integral, METH_VARARGS, "computes the entire integral in OGC Eq. (4)"},
+	{"ogc_jacobian", OGC_Integral_Der, METH_VARARGS, "computes Jacobian of integral in OGC Eq. (4)"},
 	{NULL, NULL, 0, NULL}
 };
 
