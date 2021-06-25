@@ -4,6 +4,7 @@ from fit3omega import __version__
 
 C_module = Extension("integrate",
                      sources=["./integrate/integrate.c",
+                              "./integrate/exceptions.c",
                               "./integrate/util.c",
                               "./integrate/borca_tasciuc.c",
                               "./integrate/olson_graham_chen.c",
