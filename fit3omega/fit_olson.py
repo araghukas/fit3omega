@@ -37,21 +37,44 @@ class FitOlson(BasinhoppingOptimizer):
         area = self.heater.width * self.heater.length
         return self.integrators.ogc_integral(self.config_values[0], kys, ratio_xys, Cvs, Rcs) / area
 
-    def Z2_func_jac(self, ids) -> np.ndarray:
-        """
-        Jacobian matrix for the above function
-        """
-        return np.zeros(1)
+    def dZ2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
+        if not self._integrators_ready or self._refresh_dependents:
+            self._init_integrators()
+
+        area = self.heater.width * self.heater.length
+        return self.integrators.ogc_jacobian(
+            self.config_values[0], kys, ratio_xys, Cvs, Rcs) / area
 
     def T2_func(self, kys, ratio_xys, Cvs, Rcs):
         """synthetic average T2 at each ω, from sample parameters"""
-        return -self.power.norm * self.Z2_func(kys, ratio_xys, Cvs, Rcs)
+        self._T2_func_latest = -self.power.norm * self.Z2_func(kys, ratio_xys, Cvs, Rcs)
+        return self._T2_func_latest
+
+    def dT2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
+        return -self.power.norm * self.dZ2_func(kys, ratio_xys, Cvs, Rcs)
+
+    def error_func_jac(self, args) -> np.ndarray:
+        """
+        Jacobian matrix for the error function: sum( |T - T_measured|^2 / |T_measured|^2 )
+        """
+        args_T2 = self._sub_args_into_complete_params(args)
+        jac_T = self.dT2_func(*args_T2)
+
+        T2_func_ = self._T2_func_latest
+        tx = T2_func_.real - self.T2.x
+        ty = T2_func_.imag - self.T2.y
+        jac_error = sum(
+            2. * (np.dot(jac_T.real, tx) + np.dot(jac_T.imag, ty)) / self.T2.norm_sq
+        )
+
+        return jac_error / len(T2_func_)
 
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
 
     def _init_integrators(self):
         self.integrators.ogc_set(self.omegas,
+                                 self._ids,
                                  self.heater.width / 2.0,
                                  1e-6,
                                  15.,
@@ -59,13 +82,12 @@ class FitOlson(BasinhoppingOptimizer):
         self._integrators_ready = True
 
     def get_current_T2(self):
-        heights = self.sample.heights
         kys = self.sample.kys
         ratio_xys = self.sample.ratio_xys
         Cvs = self.sample.Cvs
         Rcs = self.sample.Rcs
 
-        T2_complex = self.T2_func(heights, kys, ratio_xys, Cvs, Rcs)
+        T2_complex = self.T2_func(kys, ratio_xys, Cvs, Rcs)
         T2_x = T2_complex.real
         T2_y = T2_complex.imag
         err = (sum(abs(self.T2.x - T2_complex.real))

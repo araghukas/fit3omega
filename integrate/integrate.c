@@ -7,8 +7,6 @@
 #include "olson_graham_chen.h"
 #include "exceptions.h"
 
-#include <stdio.h>
-
 
 // flags == "Python-side `set` method called successfully; parameters received."
 int BT_PARAMS_SET;
