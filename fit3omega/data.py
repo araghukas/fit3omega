@@ -8,7 +8,8 @@ class ACReading:
         self.y = y  # "imag" part
         self.xerr = xerr  # (abserr x) / abs x
         self.yerr = yerr  # (abserr y) / abs y
-        self.norm = np.sqrt(x**2 + y**2)  # R
+        self.norm_sq = x**2 + y**2
+        self.norm = np.sqrt(self.norm_sq)  # R
         self.norm_err = np.sqrt(xerr**2 + yerr**2)  # (abserr R) / R
 
 
