@@ -174,18 +174,19 @@ void fdz0_dRc(double c, double o)
 // ================================================================================================
 
 
-void (*fdz0_dX_map[])(double,double) = {
+static void (*fdz0_dX_map[])(double,double) = {
 	fdz0_dky, fdz0_dCv, fdz0_dpsi, fdz0_dRc
 };
 
-double complex *dz0_dX_map[] = {
+static double complex *dz0_dX_map[] = {
 	dz0_dky_, dz0_dCv_, dz0_dpsi_, dz0_dRc_
 };
 
 
 double complex (*jac_Z(void))[MAX_n_OMEGAS]
 {
-	static const double A = 2.0 / M_PI; // 2x because integrand is symmetric in chi [-MAX,MAX]
+	static const double A = 2.0 / M_PI;  // 2x because integrand is symmetric in chi [-MAX,MAX]
+
 	for (int i = 0; i < n_OMEGAS; i++) {
 
 		for (int k = 0; k < N_XPTS; k++) {
@@ -194,22 +195,22 @@ double complex (*jac_Z(void))[MAX_n_OMEGAS]
 			fPhis(chi,omega);
 			fzs(chi,omega);
 			fXis(chi,omega);
-
 			double sinq_sq_ = sinc_sq(chi);
-
 			for (int n = 0; n < n_PARAMS; n++) {
 				// calculate integrand value at (χ,ω) using appropriate dz0_dX function
-				fdz0_dX_map[param_ids_[n][0]](chi,omega);
-				jac_Z_fs_buff_[n][k] = A * sinq_sq_ * dz0_dX_map[param_ids_[n][0]][k];
+				int i_param = param_ids_[n][0];
+				int i_layer = param_ids_[n][1];
+				void (*f_compute_dzdX)(double,double) = fdz0_dX_map[i_param];
+				double complex integrand_val_k = dz0_dX_map[i_param][i_layer];
+				f_compute_dzdX(chi,omega);
+				jac_Z_fs_buff_[n][k] = A * sinq_sq_ * integrand_val_k;
 			}
 		}
 
 		for (int n = 0; n < n_PARAMS; n++) {
-				val_trapz(jac_Z_fs_buff_[n],CHIS,jac_Z_result_[n]);
+			val_trapz(jac_Z_fs_buff_[n],CHIS,jac_Z_result_[n]);
 		}
 	}
 
 	return jac_Z_result_;
 }
-
-

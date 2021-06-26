@@ -34,12 +34,11 @@ void fPhis(double chi, double omega)
 void fzs(double chi, double omega)
 {
 	/* OGC Eq. (5); (the z w/ no tilde) for all layers at (χ,ω)  */
-
 	int i_layer = n_LAYERS - 1;
-	zs_[i_layer] = -HALF_WIDTH / (kys_[i_layer] * Phi(i_layer,chi,omega));
+	zs_[i_layer] = -HALF_WIDTH / (kys_[i_layer] * Phis_[i_layer]);
 	i_layer--;
 	while (i_layer >= 0) {
-		double complex P = Phi(i_layer,chi,omega);
+		double complex P = Phis_[i_layer];
 		double complex kPhi_b = kys_[i_layer] * P / HALF_WIDTH;
 		double complex tanh_term = ctanh(P * ds_[i_layer] / HALF_WIDTH);
 		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
@@ -50,14 +49,6 @@ void fzs(double chi, double omega)
 }
 
 
-double complex z0(double chi, double omega)
-{
-	/* see above */
-	fzs(chi,omega);
-	return zs_[0];
-}
-
-
 // =================================================================================================
 
 
@@ -65,9 +56,11 @@ double complex ogc_integrand(double chi, double omega)
 {
 	/* OGC Eq. (4) integrand */
 	static const double A = 2.0 / M_PI; // 2x because integrand is symmetric in chi [-MAX,MAX]
-	double complex z_tilde = z0(chi,omega) - Rcs_[0];
 
-	return A * z_tilde * sinc_sq(chi);
+	fPhis(chi,omega);
+	fzs(chi,omega);
+
+	return A * (zs_[0] - Rcs_[0]) * sinc_sq(chi);
 }
 
 
