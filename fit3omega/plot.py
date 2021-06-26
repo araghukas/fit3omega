@@ -363,7 +363,8 @@ class SliderPlot(object):
         for i, layer in enumerate(self.model.sample.layers):
             d = layer.as_dict()
             for k, v in d.items():
-                if type(v) is str and v.endswith('*'):
+                k_ = k + 's'
+                if type(v) is str and v.endswith('*') and k_ in self.model.FIT_PARAMS:
                     name = layer.name
                     label = name + '.' + k
                     guess_val = float(v.rstrip('*'))
