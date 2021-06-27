@@ -53,3 +53,6 @@ class FitCahill(BasinhoppingOptimizer):
         err = (sum(abs(self.T2.x - T2_complex.real))
                + sum(abs(self.T2.y - T2_complex.imag)))
         return T2_x, T2_y, err / (2 * len(T2_x))
+
+    def _insert_extra_minimizer_kwargs(self, d: dict) -> dict:
+        return d
