@@ -25,15 +25,6 @@ double complex dz0_dpsi_[MAX_n_LAYERS];
 double complex dz0_dRc_[MAX_n_LAYERS];
 
 int n_PARAMS;
-/*
-indices identifying the degree of freedom, from
-
-	{{   k[0], ... , k[n_LAYERS-1]   },
-	 {  Cv[0], ... , Cv[n_LAYERS-1]  },
-	 { psi[0], ... , psi[n_LAYERS-1] },
-	 {  Rc[0], ... , Rc[n_LAYERS-1]  }}
-
-*/
 int param_ids_[MAX_n_PARAMS][2];
 
 double complex jac_Z_result_[MAX_n_PARAMS][MAX_n_OMEGAS];

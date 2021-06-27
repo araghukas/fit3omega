@@ -5,7 +5,7 @@
 void make_logspace(double *arr, double min, double max, int size)
 {
 	for (int k = 0; k < size; k++)
-    	arr[k] = min * pow(max / min, ((double) k) / (size - 1));
+		arr[k] = min * pow(max / min, ((double) k) / (size - 1));
 }
 
 
@@ -19,8 +19,8 @@ double sinc_sq(double x)
 
 // a general trapezoidal-rule integrator of f(x,ω_i)dx, for each ω_i 
 double complex *trapz(double complex (*fp)(double,double),
-                 	  double *xs,
-               	      double complex *Fs)
+					  double *xs,
+					  double complex *Fs)
 {
 	for (int i = 0; i < n_OMEGAS; i++) {
 		Fs[i] = 0.0*I;
@@ -38,18 +38,17 @@ double complex *trapz(double complex (*fp)(double,double),
 }
 
 
-// same as above, except function values provided, not function pointer
-double complex *val_trapz(double complex *fs, double *xs, double complex *Fs)
+// more generic integrator, takes values x and f(x), computes scalar result
+double complex val_trapz(double complex *fs, double *xs)
 {
-	for (int i = 0; i < n_OMEGAS; i++) {
-		Fs[i] = 0.0*I;
-		double complex f_prev = fs[0];
-		for (int k = 1; k < N_XPTS; k++) {
-			double dx = xs[k] - xs[k-1];
-			Fs[i] += (dx / 2.0) * (fs[k] + f_prev);
-			f_prev = fs[k];
-		}
+	double complex F = 0.0*I;
+	double complex f_prev = fs[0];
+	
+	for (int k = 1; k < N_XPTS; k++) {
+		double dx = xs[k] - xs[k-1];
+		F += (dx / 2.0) * (fs[k] + f_prev);
+		f_prev = fs[k];
 	}
 
-	return Fs;
+	return F;
 }

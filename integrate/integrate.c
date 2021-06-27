@@ -12,6 +12,9 @@
 int BT_PARAMS_SET;
 int OGC_PARAMS_SET;
 
+// byte size of a `double complex` variable
+static const size_t DBL_CPLX_SIZE = sizeof(double complex);
+
 
 // =================================================================================================
 //
@@ -25,14 +28,21 @@ int OGC_PARAMS_SET;
 static PyObject *as_complex_1darray(double complex *arr, int size)
 {
 	const npy_intp dims[] = { size };
-	return PyArray_SimpleNewFromData(1, dims, NPY_COMPLEX128, arr);
+	return PyArray_SimpleNewFromData(1, dims, NPY_COMPLEX128, (void *) arr);
 }
 
 
-static PyObject *as_complex_2darray(double complex arr[][MAX_n_OMEGAS], int n_rows, int n_cols)
+static PyObject *as_complex_2darray(double complex arr[MAX_n_PARAMS][MAX_n_OMEGAS],
+									int n_rows, int n_cols)
 {
-	const npy_intp dims[] = { n_rows, n_cols };
-	return PyArray_SimpleNewFromData(2, dims, NPY_COMPLEX128, arr);
+	PyArray_Descr *descr = PyArray_DescrFromType(NPY_COMPLEX128);
+	const npy_intp dims[] = { n_rows, n_cols};
+	const npy_intp strides[] = { MAX_n_OMEGAS * DBL_CPLX_SIZE, DBL_CPLX_SIZE };
+	PyObject *arr_Py = PyArray_NewFromDescr(
+		&PyArray_Type, descr, 2, dims, strides, (void *) arr, NPY_ARRAY_WRITEABLE, NULL
+	);
+
+	return arr_Py;
 }
 
 

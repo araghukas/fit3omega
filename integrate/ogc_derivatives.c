@@ -33,7 +33,7 @@ void fXis(double chi, double omega)
 // ================================================================================================
 
 
-void fdz0_dky(double c, double o)
+double complex *fdz0_dky(double c, double o)
 {
 	/* OGC Eq. (12); for all layers at (χ,ω) */
 	int i_layer = n_LAYERS - 1;
@@ -54,10 +54,11 @@ void fdz0_dky(double c, double o)
 		dz0_dky_[i_layer] *= (Xis_[i_layer]*z_tilde - zs_[i_layer]);
 		i_layer--;
 	}
+	return dz0_dky_;
 }
 
 
-void fdz0_dCv(double chi, double omega)
+double complex *fdz0_dCv(double chi, double omega)
 {
 	/*
 	OGC Eq. (13); for all layers at (χ,ω)
@@ -107,11 +108,12 @@ void fdz0_dCv(double chi, double omega)
 		dz0_dCv_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
 		i_layer--;
 	}
+	return dz0_dCv_;
 }
 
 
 
-void fdz0_dpsi(double chi, double omega)
+double complex *fdz0_dpsi(double chi, double omega)
 {
 	/* OGC Eq. (14); for all layers at (χ,ω) */
 
@@ -154,10 +156,11 @@ void fdz0_dpsi(double chi, double omega)
 		dz0_dpsi_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
 		i_layer--;
 	}
+	return dz0_dpsi_;
 }
 
 
-void fdz0_dRc(double c, double o)
+double complex *fdz0_dRc(double c, double o)
 {
 	/* OGC Eq. (15); for all layers at (χ,ω) */
 	int i_layer = n_LAYERS - 1;
@@ -168,19 +171,11 @@ void fdz0_dRc(double c, double o)
 			dz0_dRc_[i_layer] *= Xis_[j];
 		i_layer--;
 	}
+	return dz0_dRc_;
 };
 
 
 // ================================================================================================
-
-
-static void (*fdz0_dX_map[])(double,double) = {
-	fdz0_dky, fdz0_dCv, fdz0_dpsi, fdz0_dRc
-};
-
-static double complex *dz0_dX_map[] = {
-	dz0_dky_, dz0_dCv_, dz0_dpsi_, dz0_dRc_
-};
 
 
 double complex (*jac_Z(void))[MAX_n_OMEGAS]
@@ -188,28 +183,44 @@ double complex (*jac_Z(void))[MAX_n_OMEGAS]
 	static const double A = 2.0 / M_PI;  // 2x because integrand is symmetric in chi [-MAX,MAX]
 
 	for (int i = 0; i < n_OMEGAS; i++) {
+		double omega = OMEGAS[i];
 
 		for (int k = 0; k < N_XPTS; k++) {
 			double chi = CHIS[k];
-			double omega = OMEGAS[i];
+			double sinq_sq_ = sinc_sq(chi);
 			fPhis(chi,omega);
 			fzs(chi,omega);
 			fXis(chi,omega);
-			double sinq_sq_ = sinc_sq(chi);
+
 			for (int n = 0; n < n_PARAMS; n++) {
-				// calculate integrand value at (χ,ω) using appropriate dz0_dX function
 				int i_param = param_ids_[n][0];
 				int i_layer = param_ids_[n][1];
-				void (*f_compute_dzdX)(double,double) = fdz0_dX_map[i_param];
-				double complex integrand_val_k = dz0_dX_map[i_param][i_layer];
-				f_compute_dzdX(chi,omega);
-				jac_Z_fs_buff_[n][k] = A * sinq_sq_ * integrand_val_k;
+
+				double complex *f_values = NULL;
+				switch(i_param)
+				{
+					case 0:
+						f_values = fdz0_dky(chi,omega);
+						break;
+					case 1:
+						f_values = fdz0_dpsi(chi,omega);
+						break;
+					case 2:
+						f_values = fdz0_dCv(chi,omega);
+						break;
+					case 3:
+						f_values = fdz0_dRc(chi,omega);
+						break;
+					default:
+						PyErr_SetString(ParameterIDError, ParameterIDError_MSG);
+						return jac_Z_result_;
+				}
+				jac_Z_fs_buff_[n][k] = A * sinq_sq_ * f_values[i_layer];
 			}
 		}
 
-		for (int n = 0; n < n_PARAMS; n++) {
-			val_trapz(jac_Z_fs_buff_[n],CHIS,jac_Z_result_[n]);
-		}
+		for (int n = 0; n < n_PARAMS; n++)
+			jac_Z_result_[n][i] = val_trapz(jac_Z_fs_buff_[n],CHIS);
 	}
 
 	return jac_Z_result_;
