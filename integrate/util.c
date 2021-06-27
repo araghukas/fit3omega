@@ -46,7 +46,7 @@ double complex *val_trapz(double complex *fs, double *xs, double complex *Fs)
 		double complex f_prev = fs[0];
 		for (int k = 1; k < N_XPTS; k++) {
 			double dx = xs[k] - xs[k-1];
-			Fs[i] += (dx / 2.0) * (fs[k] - f_prev);
+			Fs[i] += (dx / 2.0) * (fs[k] + f_prev);
 			f_prev = fs[k];
 		}
 	}
