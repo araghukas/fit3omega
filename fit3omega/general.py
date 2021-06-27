@@ -195,7 +195,7 @@ class BasinhoppingOptimizer(Model):
     def get_current_T2(self):
         raise NotImplementedError
 
-    def _insert_extra_minimizer_kwargs(self, d: dict) -> dict:
+    def _insert_extra_minimizer_kwargs(self, kwargs: dict) -> dict:
         raise NotImplementedError
 
 

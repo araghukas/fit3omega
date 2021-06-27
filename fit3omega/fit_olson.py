@@ -66,7 +66,7 @@ class FitOlson(BasinhoppingOptimizer):
         error_func_jacobian = (np.dot(jac_T2.real, tx / self.T2.norm_sq)
                                + np.dot(jac_T2.imag, ty / self.T2.norm_sq))
 
-        return (2. / len(T2_func_)) * error_func_jacobian
+        return (2. / len(T2_func_)) * error_func_jacobian * np.array(args)
 
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
@@ -93,6 +93,6 @@ class FitOlson(BasinhoppingOptimizer):
                + sum(abs(self.T2.y - T2_complex.imag)))
         return T2_x, T2_y, err / (2 * len(T2_x))
 
-    def _insert_extra_minimizer_kwargs(self, d: dict) -> dict:
-        d['jac'] = self.error_func_jac
-        return d
+    def _insert_extra_minimizer_kwargs(self, kwargs: dict) -> dict:
+        kwargs['jac'] = self.error_func_jac
+        return kwargs
