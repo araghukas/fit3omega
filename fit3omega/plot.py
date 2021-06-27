@@ -486,7 +486,7 @@ class SliderPlot(object):
 
     def _run_fit_and_update(self, _):
         niter = self._get_niter_estimate() if self.niter is None else self.niter
-        self.model.fit(frac=self.frac, niter=niter)
+        self.model.fit(niter=niter)
         for attr_name, values in self.model.fitted_kwargs.items():
             self.model.sample.param_modify(None, attr_name, values)
         self._update_graph()
