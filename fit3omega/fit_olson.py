@@ -58,13 +58,13 @@ class FitOlson(BasinhoppingOptimizer):
         Jacobian matrix for the error function: sum( |T - T_measured|^2 / |T_measured|^2 )
         """
         args_T2 = self._sub_args_into_complete_params(args)
-        jac_T = self.dT2_func(*args_T2)
+        jac_T2 = self.dT2_func(*args_T2)
 
         T2_func_ = self._T2_func_latest
         tx = T2_func_.real - self.T2.x
         ty = T2_func_.imag - self.T2.y
         jac_error = sum(
-            2. * (np.dot(jac_T.real, tx) + np.dot(jac_T.imag, ty)) / self.T2.norm_sq
+            2. * (np.dot(jac_T2.real, tx) + np.dot(jac_T2.imag, ty)) / self.T2.norm_sq
         )
 
         return jac_error / len(T2_func_)
