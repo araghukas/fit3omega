@@ -1,47 +1,16 @@
 import numpy as np
-from scipy.optimize import basinhopping
+from scipy.optimize import basinhopping, Bounds
 
 from fit3omega.model import Model
 from fit3omega.data import ACReading
 
 
-class Stepper:
-    """
-    Controls random walk used in "basinhopping" fit engine
-    """
-
-    def __init__(self, step_sizes):
-        self.step_sizes = step_sizes
-        self._bounds_func = None
-
-    def __call__(self, x):
-        for i, s in enumerate(self.step_sizes):
-            x[i] += np.random.uniform(-s, s)
-        return x
-
-    def get_bounds(self, *args, **kwargs):
-        return self._bounds_func(*args, **kwargs)
-
-    @classmethod
-    def by_fraction(cls, guesses: list, frac: float):
-        step_sizes = [guess * frac for guess in guesses]
-        stp = cls(step_sizes)
-        stp._bounds_func = Stepper.bounds_by_fraction
-        return stp
-
-    @staticmethod
-    def bounds_by_fraction(guesses: list, frac: float):
-        # TODO: not quite right here
-        f = frac / 2
-        a1 = 1 - f
-        a2 = 1 + f
-        if a1 > a2:
-            a1, a2 = a2, a1
-
-        a2 = 0.0 if frac < 0 < a2 else a2  # neg. fraction clamp to [1+f  ,   0]
-        a1 = 0.0 if a1 < 0 < frac else a1  # pos. fraction clamp to [    0, 1+f]
-
-        return [(a1 * guess, a2 * guess) for guess in guesses]
+def positive_bounds(guesses: list) -> Bounds:
+    lb, ub = [], []
+    for g in guesses:
+        lb.append(0.1 * g)
+        ub.append(10. * g)
+    return Bounds(lb, ub, keep_feasible=True)
 
 
 class BasicPrinterCallBack:
@@ -115,6 +84,8 @@ class BasinhoppingOptimizer(Model):
         self._fitted_kwargs = {}
         self._error = None
 
+        self._T2_func_latest = None
+
         # C-extension integrator module
         self.integrators = __import__('integrate')
 
@@ -160,20 +131,23 @@ class BasinhoppingOptimizer(Model):
         args_T2 = self._sub_args_into_complete_params(args)
         T2_func_ = self.T2_func(*args_T2)
 
-        err = sum(((self.T2.x - T2_func_.real) / self.T2.norm)**2
-                  + ((self.T2.y - T2_func_.imag) / self.T2.norm)**2)
+        err = sum(
+            ((T2_func_.real - self.T2.x)**2 + (T2_func_.imag - self.T2.y)**2)
+            / self.T2.norm_sq
+        )
+
         return err / (len(T2_func_))
 
-    def fit(self, niter=30, **kwargs):
-        kwargs["guesses"] = self._guesses
-        stepper = Stepper.by_fraction(**kwargs)
+    def fit(self, niter=30):
         callback = BasicPrinterCallBack(niter)
+
+        minimizer_kwargs = self._insert_extra_minimizer_kwargs({
+            'method': 'L-BFGS-B',
+            'bounds': positive_bounds(self._guesses)
+        })
+
         fit_result = basinhopping(self.error_func, self._guesses, niter=niter,
-                                  minimizer_kwargs={
-                                      'method': 'L-BFGS-B',
-                                      'bounds': stepper.get_bounds(**kwargs)
-                                  },
-                                  take_step=stepper,
+                                  minimizer_kwargs=minimizer_kwargs,
                                   callback=callback)
         self._record_result(fit_result)
 
@@ -221,158 +195,8 @@ class BasinhoppingOptimizer(Model):
     def get_current_T2(self):
         raise NotImplementedError
 
-
-# class FitGeneral(Model):
-#     """
-#     Implementation of the general fitting method/equation.
-#     Combines "basinhopping" with Cahill/Borca-Tasciuc physics model in the C-extension.
-#     """
-#
-#     BOUNDARY_TYPES = ['s', 'i', 'a']
-#     FIT_ARG_NAMES = ["heights", "kys", "ratio_xys", "Cvs"]
-#
-#     def __init__(self, sample, data, b_type):
-#         super().__init__(sample, data)
-#         self.n_layers = len(self.sample.layers)
-#         self._full_args = None
-#
-#         self._fit_indices = []
-#         self._guesses = []
-#         self._ids = []
-#
-#         self._defaults = (
-#             self.sample.heights, self.sample.kys, self.sample.ratio_xys, self.sample.Cvs
-#         )
-#
-#         if b_type not in FitGeneral.BOUNDARY_TYPES:
-#             raise ValueError("boundary type {} is not one of {}"
-#                              .format(b_type, FitGeneral.BOUNDARY_TYPES))
-#         self.b_type = b_type
-#
-#         self._full_args = []
-#         for lst in self._defaults:
-#             self._full_args += lst
-#
-#         for i, arg in enumerate(self._full_args):
-#             if type(arg) is str and arg.endswith('*'):
-#                 self._fit_indices.append(i)
-#                 self._guesses.append(float(arg.rstrip('*')))
-#                 self._ids.append(self._identify_fit_index(i))
-#
-#         self._intg_set = False
-#         self._result = None
-#         self._fitted_kwargs = {}
-#         self._error = None
-#
-#         # C-extension integrator module
-#         self.intg = __import__('integrate')
-#
-#     @property
-#     def fitted_kwargs(self):
-#         return self._fitted_kwargs.copy()
-#
-#     @property
-#     def T2_fit(self):
-#         if self._result is None:
-#             return None
-#         T2 = self.T2_func(**self._fitted_kwargs)
-#         x = T2.real
-#         y = T2.imag
-#         xerr = None
-#         yerr = None  # TODO: an error estimate
-#         return ACReading(x, y, xerr, yerr)
-#
-#     @property
-#     def result(self):
-#         return self._result
-#
-#     @property
-#     def error(self):
-#         """mean-squared error for fit"""
-#         return self._error
-#
-#     @property
-#     def defaults(self):
-#         return self._defaults
-#
-#     def fit(self, niter=30, **kwargs):
-#         kwargs["guesses"] = self._guesses
-#         stepper = Stepper.by_fraction(**kwargs)
-#         callback = BasicPrinterCallBack(niter)
-#         fit_result = basinhopping(self.T2_err_func, self._guesses, niter=niter,
-#                                   minimizer_kwargs={
-#                                       'method': 'L-BFGS-B',
-#                                       'bounds': stepper.get_bounds(**kwargs)
-#                                   },
-#                                   take_step=stepper,
-#                                   callback=callback)
-#         self._record_result(fit_result)
-#
-#     def T2_func(self, heights, kys, ratio_xys, Cvs) -> np.ndarray:
-#         """T2 prediction from physical model and provided properties"""
-#         if not self._intg_set or self._refresh_dependents:
-#             self._set_intg()
-#
-#         # extra divisor of ROOT2 since measured T2 amplitudes are RMS
-#         P = -1. / (np.pi * self.heater.length * kys[0] * ROOT2) * self.power.x
-#         return P * self.intg.bt_integral(heights, kys, ratio_xys, Cvs)
-#
-#     def T2_err_func(self, args) -> float:
-#         """objective function for the fit method"""
-#         err_args = self._full_args.copy()
-#         for j, index in enumerate(self._fit_indices):
-#             err_args[index] = args[j]
-#
-#         # reconstruct T2_func args
-#         args_T2 = tuple()
-#         for k in range(len(self._full_args) // self.n_layers):
-#             i_min = k * self.n_layers
-#             i_max = i_min + self.n_layers
-#             args_T2 += (err_args[i_min:i_max],)
-#
-#         T2_func_ = self.T2_func(*args_T2)
-#
-#         err = sum(np.abs(self.T2.x - T2_func_.real))
-#         err += sum(np.abs(self.T2.y - T2_func_.imag))
-#         return err / len(T2_func_)
-#
-#     def plot_fit(self, show=False):
-#         """plot fit result"""
-#         return plot.plot_fitted_T2(self, show=show)
-#
-#     def set_data_limits(self, start, end):
-#         super().set_data_limits(start, end)
-#
-#     def _identify_fit_index(self, index) -> tuple:
-#         i_arg = index // len(self.sample.heights)
-#         i_layer = index - i_arg * len(self.sample.heights)
-#         return i_arg, i_layer
-#
-#     def _record_result(self, fit_result):
-#         fitted_argv = fit_result.x
-#         result = [
-#             ("heights", self.sample.heights.copy()),
-#             ("kys", self.sample.kys.copy()),
-#             ("ratio_xys", self.sample.ratio_xys.copy()),
-#             ("Cvs", self.sample.Cvs.copy())
-#         ]
-#         for i, index in enumerate(self._fit_indices):
-#             i_source = index // len(self.sample.heights)
-#             i_field = index - i_source * len(self.sample.heights)
-#             result[i_source][1][i_field] = fitted_argv[i]
-#
-#         self._fitted_kwargs = {r[0]: r[1] for r in result}
-#         self._error = fit_result.fun
-#         self._result = FitGeneralResult(self.sample, self._guesses, fit_result.x, self._ids)
-#
-#     def _set_intg(self):
-#         self.intg.bt_set(self.omegas,
-#                          self.heater.width / 2,
-#                          1e-3,
-#                          1e7,
-#                          len(self.sample.layers),
-#                          self.b_type.encode('utf-8'))
-#         self._intg_set = True
+    def _insert_extra_minimizer_kwargs(self, d: dict) -> dict:
+        raise NotImplementedError
 
 
 class OptimizerResult:
