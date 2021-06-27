@@ -23,8 +23,7 @@ void fXis(double chi, double omega)
 		double complex kPhi_b_sq = kPhi_b * kPhi_b;
 		double complex z_i = zs_[i_layer];
 		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
-		Xis_[i_layer] = (1.0 - kPhi_b_sq * z_i * z_i)
-						 /(1.0 - kPhi_b_sq * z_tilde * z_tilde);
+		Xis_[i_layer] = (1.0 - kPhi_b_sq * z_i * z_i) / (1.0 - kPhi_b_sq * z_tilde * z_tilde);
 		i_layer--;
 	}
 }

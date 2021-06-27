@@ -16,9 +16,8 @@ static const int MAX_n_PARAMS = 4 * MAX_n_LAYERS;
 // utility functions
 void make_logspace(double *arr, double min, double max, int size);
 double sinc_sq(double x);
-double complex *trapz(double complex (*fp)(double,double), double *xs, double complex *Fs);
+double complex *omega_trapz(double complex (*fp)(double,double), double *xs, double complex *Fs);
 double complex val_trapz(double complex *fs, double *xs);
-
 
 // sample parameters (set from Python side)
 int n_LAYERS;       // number of layers

@@ -18,9 +18,9 @@ double sinc_sq(double x)
 
 
 // a general trapezoidal-rule integrator of f(x,ω_i)dx, for each ω_i 
-double complex *trapz(double complex (*fp)(double,double),
-					  double *xs,
-					  double complex *Fs)
+double complex *omega_trapz(double complex (*fp)(double,double),
+														double *xs,
+														double complex *Fs)
 {
 	for (int i = 0; i < n_OMEGAS; i++) {
 		Fs[i] = 0.0*I;

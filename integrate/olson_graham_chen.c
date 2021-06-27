@@ -12,9 +12,9 @@
 
 double complex Phi(int i_layer, double chi, double omega)
 {
-    /* OGC Eq. (6) */
-    double b = HALF_WIDTH;
-    return csqrt(psis_[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
+		/* OGC Eq. (6) */
+		double b = HALF_WIDTH;
+		return csqrt(psis_[i_layer]*chi*chi + I*b*b*2.0*omega*Cvs_[i_layer]/kys_[i_layer]);
 }
 
 
@@ -43,7 +43,7 @@ void fzs(double chi, double omega)
 		double complex tanh_term = ctanh(P * ds_[i_layer] / HALF_WIDTH);
 		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
 		zs_[i_layer] = (kPhi_b * z_tilde - tanh_term)
-		                / (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term);
+										/ (kPhi_b - kPhi_b * kPhi_b * z_tilde * tanh_term);
 		i_layer--;
 	}
 }
@@ -67,5 +67,5 @@ double complex ogc_integrand(double chi, double omega)
 double complex *ogc_integral(void)
 {
 	/* OGC Eq. (4) integral */
-	return trapz(ogc_integrand,CHIS,ogc_integral_result_);
+	return omega_trapz(ogc_integrand,CHIS,ogc_integral_result_);
 }

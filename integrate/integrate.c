@@ -279,13 +279,13 @@ static PyObject *OGC_Set(PyObject *self, PyObject *args)
 
 	n_PARAMS = PyObject_Length(param_ids_Py);
 	for (int n = 0; n < n_PARAMS; n++) {
-			PyObject *param_id_Py = PyList_GetItem(param_ids_Py, n);
+		PyObject *param_id_Py = PyList_GetItem(param_ids_Py, n);
 
-			PyObject *i_param = PyTuple_GetItem(param_id_Py, 0);
-			param_ids_[n][0] = (int) PyLong_AsLong(i_param);
+		PyObject *i_param = PyTuple_GetItem(param_id_Py, 0);
+		param_ids_[n][0] = (int) PyLong_AsLong(i_param);
 
-			PyObject *i_layer = PyTuple_GetItem(param_id_Py, 1);  // layer index
-			param_ids_[n][1] = (int) PyLong_AsLong(i_layer);
+		PyObject *i_layer = PyTuple_GetItem(param_id_Py, 1);  // layer index
+		param_ids_[n][1] = (int) PyLong_AsLong(i_layer);
 	}
 
 	make_logspace(CHIS, chi_i_, chi_f_, N_XPTS);
