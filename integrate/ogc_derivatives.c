@@ -68,15 +68,13 @@ double complex *fdz0_dCv(double chi, double omega)
 	int i_layer = n_LAYERS - 1;
 
 	const double b = HALF_WIDTH;
-	const double H = ds_[n_LAYERS-1];
-	double ky;
-	double Cv;
+	double ky = kys_[i_layer];
+	double Cv = Cvs_[i_layer];
+	double d = ds_[i_layer];
 	double complex z;
 	double complex P;
 	double complex alphaPhi;
 
-	ky = kys_[i_layer];
-	Cv = Cvs_[i_layer];
 	dz0_dCv_[i_layer] = -ky / (Cv * Cv);  // chain rule factor
 
 	for (int j = i_layer-1; j >= 0; j--)
@@ -87,12 +85,13 @@ double complex *fdz0_dCv(double chi, double omega)
 	dz0_dCv_[i_layer] *= -I*omega*b*b / (alphaPhi*alphaPhi);
 
 	z = zs_[i_layer];
-	dz0_dCv_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
+	dz0_dCv_[i_layer] *= d/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
 
 	i_layer--;
 	while (i_layer >= 0) {
 		ky = kys_[i_layer];
 		Cv = Cvs_[i_layer];
+		d = ds_[i_layer];
 		dz0_dCv_[i_layer] = -ky / (Cv * Cv);
 
 		for (int j = i_layer-1; j >= 0; j--)
@@ -104,7 +103,7 @@ double complex *fdz0_dCv(double chi, double omega)
 
 		z = zs_[i_layer];
 		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
-		dz0_dCv_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
+		dz0_dCv_[i_layer] *= d/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
 		i_layer--;
 	}
 	return dz0_dCv_;
@@ -119,29 +118,28 @@ double complex *fdz0_dpsi(double chi, double omega)
 	int i_layer = n_LAYERS - 1;
 
 	const double b = HALF_WIDTH;
-	const double H = ds_[n_LAYERS-1];
-	double ky;
-	double Cv;
+	double ky = kys_[i_layer];
+	double Cv = Cvs_[i_layer];
+	double d = ds_[i_layer];
 	double complex z;
 	double complex P;
 
-	ky = kys_[i_layer];
-	Cv = Cvs_[i_layer];
 	dz0_dpsi_[i_layer] = 1.0;  // chain rule factor
 
 	for (int j = i_layer-1; j >= 0; j--)
 		dz0_dpsi_[i_layer] *= Xis_[j];
 
 	P = Phis_[i_layer];
-	dz0_dpsi_[i_layer] *=  chi*chi/(2.0*P*P);
+	dz0_dpsi_[i_layer] *= chi*chi/(2.0*P*P);
 
 	z = zs_[i_layer];
-	dz0_dpsi_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
+	dz0_dpsi_[i_layer] *= d/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) - z;
 
 	i_layer--;
 	while (i_layer >= 0) {
 		ky = kys_[i_layer];
 		Cv = Cvs_[i_layer];
+		d = ds_[i_layer];
 		dz0_dpsi_[i_layer] = 1.0;
 
 		for (int j = i_layer-1; j >= 0; j--)
@@ -152,7 +150,7 @@ double complex *fdz0_dpsi(double chi, double omega)
 
 		z = zs_[i_layer];
 		double complex z_tilde = zs_[i_layer+1] - Rcs_[i_layer+1];
-		dz0_dpsi_[i_layer] *= H/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
+		dz0_dpsi_[i_layer] *= d/ky * (z*z*ky*ky*P*P/(b*b) - 1.0) + Xis_[i_layer]*z_tilde - z;
 		i_layer--;
 	}
 	return dz0_dpsi_;
@@ -165,7 +163,7 @@ double complex *fdz0_dRc(double c, double o)
 	int i_layer = n_LAYERS - 1;
 
 	while (i_layer >= 0) {
-		dz0_dRc_[i_layer] = -Xis_[i_layer];
+		dz0_dRc_[i_layer] = -1.0;
 		for (int j = i_layer-1; j >= 0; j--)
 			dz0_dRc_[i_layer] *= Xis_[j];
 		i_layer--;
