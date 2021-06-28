@@ -317,7 +317,7 @@ class SliderPlot(object):
     slider_valfmt = "%.2e"
 
     error_fmt = "error: {:<10,.6e}"
-    error_green_thresh = 0.05
+    error_green_thresh = 0.005
 
     def __init__(self, m, frac: float = 0.99, niter: int = None,
                  enable_heater_params: bool = False):
@@ -500,15 +500,10 @@ class SliderPlot(object):
                     break
 
     def _get_niter_estimate(self):
-        n = 0  # number of fit parameters
-        for layer in self.model.sample.layers:
-            d = layer.as_dict()
-            for k in d:
-                v = d[k]
-                if type(v) is str and v.endswith('*'):
-                    n += 1
-        if n == 0:
-            return 0
-
-        n = 4 if n >= 4 else n
-        return 10 * 2**(4 - n)
+        N = len(self.model.omegas)
+        if 0 < N < 10:
+            return 100
+        elif 10 <= N <= 30:
+            return 50
+        else:
+            return 30

@@ -9,8 +9,21 @@ def positive_bounds(guesses: list) -> Bounds:
     lb, ub = [], []
     for g in guesses:
         lb.append(0.1 * g)
-        ub.append(10. * g)
+        ub.append(1.9 * g)
     return Bounds(lb, ub, keep_feasible=True)
+
+
+class TakeStep:
+    def __init__(self, guesses, frac):
+        self.guesses = guesses
+        self.frac = frac if frac < 1.0 else 0.99
+        self.step_sizes = [frac * guess for guess in guesses]
+
+    def __call__(self, x):
+        for i in range(len(x)):
+            s = self.step_sizes[i]
+            x[i] += np.random.uniform(-s, s)
+        return x
 
 
 class BasicPrinterCallBack:
@@ -138,17 +151,19 @@ class BasinhoppingOptimizer(Model):
 
         return err / (len(T2_func_))
 
-    def fit(self, niter=30):
+    def fit(self, niter=30, frac=0.5, tol=1e-1):
         callback = BasicPrinterCallBack(niter)
-
         minimizer_kwargs = self._insert_extra_minimizer_kwargs({
             'method': 'L-BFGS-B',
-            'bounds': positive_bounds(self._guesses)
+            'bounds': positive_bounds(self._guesses),
+            'tol': tol
         })
-
+        take_step = TakeStep(self._guesses, frac)
         fit_result = basinhopping(self.error_func, self._guesses, niter=niter,
                                   minimizer_kwargs=minimizer_kwargs,
-                                  callback=callback)
+                                  callback=callback,
+                                  take_step=take_step,
+                                  niter_success=30)
         self._record_result(fit_result)
 
     def _sub_args_into_complete_params(self, args) -> tuple:

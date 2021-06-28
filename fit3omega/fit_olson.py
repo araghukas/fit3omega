@@ -61,12 +61,11 @@ class FitOlson(BasinhoppingOptimizer):
         jac_T2 = self.dT2_func(*args_T2)
 
         T2_func_ = self._T2_func_latest
-        tx = T2_func_.real - self.T2.x
-        ty = T2_func_.imag - self.T2.y
-        error_func_jacobian = (np.dot(jac_T2.real, tx / self.T2.norm_sq)
-                               + np.dot(jac_T2.imag, ty / self.T2.norm_sq))
+        tx = (T2_func_.real - self.T2.x) / self.T2.norm_sq
+        ty = (T2_func_.imag - self.T2.y) / self.T2.norm_sq
+        error_func_jacobian = np.dot(jac_T2.real, tx) + np.dot(jac_T2.imag, ty)
 
-        return (2. / len(T2_func_)) * error_func_jacobian * np.array(args)
+        return (2. / len(T2_func_)) * error_func_jacobian
 
     def plot_fit(self, show=False):
         return plot.plot_fitted_Z2(self, show=show)
@@ -89,9 +88,8 @@ class FitOlson(BasinhoppingOptimizer):
         T2_complex = self.T2_func(kys, ratio_xys, Cvs, Rcs)
         T2_x = T2_complex.real
         T2_y = T2_complex.imag
-        err = (sum(abs(self.T2.x - T2_complex.real))
-               + sum(abs(self.T2.y - T2_complex.imag)))
-        return T2_x, T2_y, err / (2 * len(T2_x))
+        err = sum(((T2_x - self.T2.x)**2 + (T2_y - self.T2.y)**2) / self.T2.norm_sq)
+        return T2_x, T2_y, err / (len(T2_complex))
 
     def _insert_extra_minimizer_kwargs(self, kwargs: dict) -> dict:
         kwargs['jac'] = self.error_func_jac
