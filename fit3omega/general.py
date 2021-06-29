@@ -52,7 +52,7 @@ class BasicPrinterCallBack:
         g = "-" if is_new_min else "+"
         s = " | ".join([
             ("{:>%d}" % self._idx_col_width).format(self._counter),
-            ("{:.3e} (%s{:.5f})" % g).format(f, abs(f - self._min_f)),
+            ("{:.3e} (%s{:.5e})" % g).format(f, abs(f - self._min_f)),
             "".join(["{:>16,.3e}".format(arg_val) for arg_val in x])
         ])
 
