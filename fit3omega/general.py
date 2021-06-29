@@ -151,7 +151,7 @@ class BasinhoppingOptimizer(Model):
 
         return err / (len(T2_func_))
 
-    def fit(self, niter=30, frac=0.5, tol=1e-1):
+    def fit(self, niter=30, niter_success=1000, frac=0.9, tol=1e-1):
         callback = BasicPrinterCallBack(niter)
         minimizer_kwargs = self._insert_extra_minimizer_kwargs({
             'method': 'L-BFGS-B',
@@ -163,7 +163,7 @@ class BasinhoppingOptimizer(Model):
                                   minimizer_kwargs=minimizer_kwargs,
                                   callback=callback,
                                   take_step=take_step,
-                                  niter_success=30)
+                                  niter_success=niter_success)
         self._record_result(fit_result)
 
     def _sub_args_into_complete_params(self, args) -> tuple:
