@@ -12,6 +12,9 @@ class ACReading:
         self.norm = np.sqrt(self.norm_sq)  # R
         self.norm_err = np.sqrt((x * xerr)**2 + (y * yerr)**2) / self.norm  # (abserr R) / R
 
+    def as_complex(self):
+        return self.x + 1j * self.y
+
 
 class Data:
     """
