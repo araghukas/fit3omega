@@ -386,7 +386,10 @@ class SliderPlot(object):
             heater_params = dict(
                 dRdT=self.model.sample.heater.dRdT,
                 width=self.model.sample.heater.width,
-                length=self.model.sample.heater.length
+                length=self.model.sample.heater.length,
+                Cv=self.model.sample.heater.Cv,
+                height=self.model.sample.heater.height,
+                Rc=self.model.sample.heater.Rc
             )
             for k, v in heater_params.items():
                 self.sample_sliders[k] = Slider(

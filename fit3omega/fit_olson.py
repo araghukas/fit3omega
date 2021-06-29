@@ -1,6 +1,7 @@
 import numpy as np
 
 from fit3omega.general import BasinhoppingOptimizer
+from fit3omega.data import ACReading
 import fit3omega.plot as plot
 
 
@@ -25,6 +26,27 @@ class FitOlson(BasinhoppingOptimizer):
             self.sample.Cvs,
             self.sample.Rcs
         )
+
+    @property
+    def T2(self) -> ACReading:
+        """
+        Average 2ω temperature oscillations at each ω
+        CORRECTED for heater properties using Borca-Tasciuc (Ref. 1) Eq. (20)
+
+        NOTE: The correction has no effect if Rth and Cv or d are 0.
+        """
+        if self._T2 is None or self._refresh_dependents:
+            T2_raw = super().T2
+            cT2_raw = T2_raw.as_complex()
+            Rth = self.heater.Rc
+            Cv = self.heater.Cv
+            d = self.heater.height
+            area = self.heater.width * self.heater.length
+            T2 = ((cT2_raw + Rth * self.power.norm / area)
+                  / (1.0 + 2.0j * self.omegas * Cv * d * (Rth + cT2_raw * area / self.power.norm)))
+            self._T2 = ACReading(T2.real, T2.imag, T2_raw.xerr, T2_raw.yerr)
+
+        return self._T2
 
     def Z2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
         """
