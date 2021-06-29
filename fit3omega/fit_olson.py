@@ -68,7 +68,7 @@ class FitOlson(BasinhoppingOptimizer):
         return (2. / len(T2_func_)) * error_func_jacobian
 
     def plot_fit(self, show=False):
-        return plot.plot_fitted_Z2(self, show=show)
+        return plot.plot_fitted_T2(self, show=show)
 
     def _init_integrators(self):
         self.integrators.ogc_set(self.omegas,

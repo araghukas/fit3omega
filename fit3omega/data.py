@@ -10,7 +10,7 @@ class ACReading:
         self.yerr = yerr  # (abserr y) / abs y
         self.norm_sq = x**2 + y**2
         self.norm = np.sqrt(self.norm_sq)  # R
-        self.norm_err = np.sqrt(xerr**2 + yerr**2)  # (abserr R) / R
+        self.norm_err = np.sqrt((x * xerr)**2 + (y * yerr)**2) / self.norm  # (abserr R) / R
 
 
 class Data:

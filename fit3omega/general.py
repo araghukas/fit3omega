@@ -126,8 +126,8 @@ class BasinhoppingOptimizer(Model):
         T2 = self.T2_func(**self._fitted_kwargs)
         x = T2.real
         y = T2.imag
-        xerr = None
-        yerr = None  # TODO: an error estimate
+        xerr = 0.0
+        yerr = 0.0  # TODO: an error estimate
         return ACReading(x, y, xerr, yerr)
 
     @property

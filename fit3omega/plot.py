@@ -189,6 +189,7 @@ def plot_fitted_T2(m, show: bool = False) -> tuple:
 
 def plot_fitted_Z2(m, show: bool = False) -> tuple:
     """plot fitted curves against measured Z2 components"""
+    # TODO: this won't work
     _set_mpl_defaults()
     fig, ax = plt.subplots(tight_layout=True)
 
