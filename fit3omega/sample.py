@@ -31,9 +31,9 @@ class Sample:
                 raise SampleError(f"invalid sample configuration file:\n {config_file}")
         for k, v in d.items():
             if k == "shunt":
-                self.shunt = Shunt(**v)
+                self.shunt = Shunt(**{_: float(x) for _, x in v.items()})
             elif k == "heater":
-                self.heater = Heater(**v)
+                self.heater = Heater(**{_: float(x) for _, x in v.items()})
             elif k == "layers":
                 for _, layer_dict in v.items():
                     try:
