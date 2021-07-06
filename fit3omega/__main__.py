@@ -319,10 +319,10 @@ def _fit_data_linear_model(sample, data, data_lims, save_name, thresh, min_lengt
     exit(0)
 
 
-def _launch_slider_plot(sample, data, frac, niter, data_lims, b_type, save_name, ehp):
-    from .fit_cahill import FitCahill
+def _launch_slider_plot(sample, data, frac, niter, data_lims, save_name, ehp):
+    from .fit_olson import FitOlson
     from .plot import SliderPlot
-    fg = FitCahill(sample, data, b_type)
+    fg = FitOlson(sample, data)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
 
@@ -439,7 +439,6 @@ if __name__ == "__main__":
                             frac=args.frac,
                             niter=args.niter,
                             data_lims=args.data_lims,
-                            b_type=args.b_type,
                             save_name=args.save_name,
                             ehp=args.enable_heater_params)
     else:
