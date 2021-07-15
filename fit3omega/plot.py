@@ -297,16 +297,16 @@ class SliderPlot(object):
     An interactive plot providing a real-time visual for manual data fitting.
     """
     meas_plot_kw = dict(
-        markersize=6,
-        marker='x',
+        markersize=5,
+        marker='o',
         markerfacecolor='w',
         zorder=0,
         linestyle='None'
     )
 
     fit_plot_kw = dict(
-        linestyle='--',
-        linewidth=1,
+        linestyle='-',
+        linewidth=1.5,
         markersize=0
     )
 
@@ -331,7 +331,7 @@ class SliderPlot(object):
         self.model = m
         self.model.set_refresh(True)
         self.model_type = type(self.model)
-        self.fig, self.ax = plt.subplots(figsize=(6, 8))
+        self.fig, self.ax = plt.subplots(figsize=(8, 8))
         self.fig.subplots_adjust(bottom=.5, top=0.95)
         self.param_sliders = {}
         self.sample_sliders = {}
@@ -350,6 +350,8 @@ class SliderPlot(object):
         X = self.model.omegas / 2. / PI
         cx = 'blue'
         cy = 'red'
+        fcx = u'#0B554C'
+        fcy = u'#550B14'
 
         # measured data
         self.ax.plot(X, self.model.T2.x, color=cx, **self.meas_plot_kw)
@@ -357,8 +359,8 @@ class SliderPlot(object):
 
         # fitted data (initial values)
         fit = self.get_fitline_data()
-        self.ax.plot(X, fit[0], color=cx, **self.fit_plot_kw)
-        self.ax.plot(X, fit[1], color=cy, **self.fit_plot_kw)
+        self.ax.plot(X, fit[0], color=fcx, **self.fit_plot_kw)
+        self.ax.plot(X, fit[1], color=fcy, **self.fit_plot_kw)
 
         # prepare the fit parameters sliders
         for i, layer in enumerate(self.model.sample.layers):
@@ -385,13 +387,15 @@ class SliderPlot(object):
         if self.enable_heater_params:
             heater_params = dict(
                 dRdT=self.model.sample.heater.dRdT,
-                width=self.model.sample.heater.width,
-                length=self.model.sample.heater.length,
+                # width=self.model.sample.heater.width,
+                # length=self.model.sample.heater.length,
                 Cv=self.model.sample.heater.Cv,
                 height=self.model.sample.heater.height,
                 Rc=self.model.sample.heater.Rc
             )
             for k, v in heater_params.items():
+                if v == 0:
+                    continue
                 self.sample_sliders[k] = Slider(
                     ax=plt.axes(self._get_slider_dims()),
                     label=k,
@@ -490,7 +494,8 @@ class SliderPlot(object):
 
     def _run_fit_and_update(self, _):
         niter = self._get_niter_estimate() if self.niter is None else self.niter
-        self.model.fit(niter=niter)
+        err = self.get_fitline_data()[-1]
+        self.model.fit(niter=niter, min_err=err)
         for attr_name, values in self.model.fitted_kwargs.items():
             self.model.sample.param_modify(None, attr_name, values)
         self._update_graph()
