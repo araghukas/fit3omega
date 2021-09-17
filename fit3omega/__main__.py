@@ -275,13 +275,21 @@ def _plot_compare_data(sample, data1, data2, save_name, show=True):
     exit(0)
 
 
-def _fit_data_general_model(sample, data, frac, niter, data_lims, b_type, save_name, show=True):
+def _fit_data_general_model(sample,
+                            data,
+                            frac,
+                            niter,
+                            data_lims,
+                            b_type,
+                            save_name,
+                            min_err,
+                            show=True):
     from .fit_cahill import FitCahill
     niter = 30 if niter is None else niter
     fg = FitCahill(sample, data, b_type)
     start, end = (0, len(fg.data)) if data_lims is None else data_lims
     fg.set_data_limits(start, end)
-    fg.fit(niter=niter, frac=frac)
+    fg.fit(niter=niter, frac=frac, min_err=min_err)
 
     print()
     print(fg.result)
@@ -389,6 +397,11 @@ if __name__ == "__main__":
                         help="boundary type for general heat transfer model",
                         type=str, default='i')
 
+    parser.add_argument("-min_err",
+                        help="minimum error for basinhopping accept-test.",
+                        type=float,
+                        default=None)
+
     parser.add_argument("-save_name",
                         help="output file name",
                         type=str, default=None)
@@ -426,6 +439,7 @@ if __name__ == "__main__":
                                 data_lims=args.data_lims,
                                 show=args.show,
                                 b_type=args.b_type,
+                                min_err=args.min_err,
                                 save_name=args.save_name)
     elif args.fit_linear:
         _fit_data_linear_model(*args.fit_linear,
