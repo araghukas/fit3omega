@@ -1,6 +1,6 @@
 import numpy as np
 
-from fit3omega.general import BasinhoppingOptimizer
+from fit3omega.base_optimizer import BasinhoppingOptimizer
 import fit3omega.plot as plot
 
 
