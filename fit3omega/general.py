@@ -179,13 +179,11 @@ class BasinhoppingOptimizer(Model):
                                   take_step=take_step,
                                   niter_success=niter_success,
                                   accept_test=None if min_err is None else self._force_improvement,
-                                  T=1e-4 if T is None else 0)
+                                  T=1e-4 if T is None else T)
         self._record_result(fit_result)
 
     def _force_improvement(self, f_new, **ignored_kwargs):
-        if f_new < self._min_err:
-            return True
-        return False
+        return f_new < self._min_err
 
     def _sub_args_into_complete_params(self, args) -> tuple:
         """produces a tuple of all arguments for `T2_func` from a partial args list"""
