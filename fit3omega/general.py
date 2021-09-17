@@ -32,17 +32,23 @@ class BasicPrinterCallBack:
     """
     MIN_F_THRESH = 1e-6
 
-    def __init__(self, i_max):
-        if i_max <= 0:
+    def __init__(self, niter, quiet=True, silent=False):
+        if niter <= 0:
             raise ValueError("non-positive value for i_max")
-        self.i_max = i_max
+        self.i_max = niter
+
+        self._silent = silent
+        self._quiet = quiet
 
         self._counter = 1
-        self._idx_col_width = int(np.log(i_max) / np.log(10.)) + 2
+        self._idx_col_width = int(np.log(niter) / np.log(10.)) + 2
         self._min_f = None
         self._min_counter = 1
 
     def __call__(self, x, f, a):
+        if self._silent:
+            return
+
         if self._min_f is None:
             self._min_f = f
             is_new_min = False
@@ -57,12 +63,16 @@ class BasicPrinterCallBack:
         ])
 
         if is_new_min:
-            h_line = "-" * len(s)
-            s = "\n".join([h_line, s + " min %d" % self._min_counter, h_line])
+            s += " min %d" % self._min_counter
             self._min_counter += 1
             self._min_f = f
 
-        print(s)
+        if self._quiet:
+            if is_new_min:
+                print(s)
+        else:
+            print(s)
+
         self._counter += 1
 
 
@@ -98,6 +108,7 @@ class BasinhoppingOptimizer(Model):
         self._error = None
 
         self._T2_func_latest = None
+        self._min_err = None
 
         # C-extension integrator module
         self.integrators = __import__('integrate')
@@ -151,8 +162,11 @@ class BasinhoppingOptimizer(Model):
 
         return err / (len(T2_func_))
 
-    def fit(self, niter=30, niter_success=1000, frac=0.9, tol=1e-1):
-        callback = BasicPrinterCallBack(niter)
+    def fit(self, niter=30, niter_success=1000, frac=0.9, tol=1e-1,
+            quiet=True, silent=False, min_err=None, T=None):
+
+        self._min_err = min_err
+        callback = BasicPrinterCallBack(niter, quiet=quiet, silent=silent)
         minimizer_kwargs = self._insert_extra_minimizer_kwargs({
             'method': 'L-BFGS-B',
             'bounds': positive_bounds(self._guesses),
@@ -163,8 +177,15 @@ class BasinhoppingOptimizer(Model):
                                   minimizer_kwargs=minimizer_kwargs,
                                   callback=callback,
                                   take_step=take_step,
-                                  niter_success=niter_success)
+                                  niter_success=niter_success,
+                                  accept_test=None if min_err is None else self._force_improvement,
+                                  T=1e-4 if T is None else 0)
         self._record_result(fit_result)
+
+    def _force_improvement(self, f_new, **ignored_kwargs):
+        if f_new < self._min_err:
+            return True
+        return False
 
     def _sub_args_into_complete_params(self, args) -> tuple:
         """produces a tuple of all arguments for `T2_func` from a partial args list"""
