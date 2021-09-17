@@ -14,6 +14,7 @@ def positive_bounds(guesses: list) -> Bounds:
 
 
 class TakeStep:
+    """take-step callable for basinhopping"""
     def __init__(self, guesses, frac):
         self.guesses = guesses
         self.frac = frac if frac < 1.0 else 0.99
