@@ -269,7 +269,7 @@ def plot_diagnostics(m, show: bool = False) -> plt.Figure:
     X = m.omegas / 2. / PI
 
     power = m.power.x * 1e3  # mW
-    dpower = m.power.abserr()
+    dpower = m.power.norm_err * m.power.norm
 
     ax_power.errorbar(X, power, dpower, elinewidth=.5, color='k')
     min_power = min(power)
