@@ -12,6 +12,9 @@ class ACReading:
         self.norm = np.sqrt(self.norm_sq)  # R
         self.norm_err = np.sqrt((x * xerr)**2 + (y * yerr)**2) / self.norm  # (abserr R) / R
 
+    def __neg__(self):
+        return ACReading(-self.x, -self.y, -self.xerr, -self.yerr)
+
     def as_complex(self):
         return self.x + 1j * self.y
 
@@ -128,21 +131,24 @@ class Data:
     def V(self) -> ACReading:
         """(V_x,RMS, V_y,RMS, d(V_x,RMS), d(V_y,RMS)"""
         if self._V is None:
-            self._V = self._get_reading("V")
+            V = self._get_reading("V")
+            self._V = V if np.all(V.x > 0.0) else -V
         return self._V
 
     @property
     def V3(self) -> ACReading:
         """(V3_x,RMS, V3_y,RMS, d(V3_x,RMS), d(V3_y,RMS)"""
         if self._V3 is None:
-            self._V3 = self._get_reading("V3")
+            V3 = self._get_reading("V3")
+            self._V3 = V3 if np.all(V3.x < 0.0) else -V3
         return self._V3
 
     @property
     def Vsh(self) -> ACReading:
         """(Vsh_x,RMS, Vsh_y,RMS, d(Vsh_x,RMS), d(Vsh_y,RMS)"""
         if self._Vsh is None:
-            self._Vsh = self._get_reading("Vsh")
+            Vsh = self._get_reading("Vsh")
+            self._Vsh = Vsh if np.all(Vsh.x > 0.0) else -Vsh
         return self._Vsh
 
     def _get_reading(self, key) -> ACReading:
