@@ -60,6 +60,7 @@ class FitOlson(BasinhoppingOptimizer):
         return self.integrators.ogc_integral(self.config_values[0], kys, ratio_xys, Cvs, Rcs) / area
 
     def dZ2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
+        """jacobian of the Z2 function"""
         if not self._integrators_ready or self._refresh_dependents:
             self._init_integrators()
 
@@ -73,6 +74,7 @@ class FitOlson(BasinhoppingOptimizer):
         return self._T2_func_latest
 
     def dT2_func(self, kys, ratio_xys, Cvs, Rcs) -> np.ndarray:
+        """jacobian of the T2 function"""
         return -self.power.norm * self.dZ2_func(kys, ratio_xys, Cvs, Rcs)
 
     def error_func_jac(self, args) -> np.ndarray:
