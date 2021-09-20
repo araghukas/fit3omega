@@ -493,9 +493,7 @@ class SliderPlot(object):
             return 0.0, 0.0, 0.0
 
     def _run_fit_and_update(self, _):
-        niter = self._get_niter_estimate() if self.niter is None else self.niter
-        err = self.get_fitline_data()[-1]
-        self.model.fit(niter=niter)
+        self.model.fit()
         for attr_name, values in self.model.fitted_kwargs.items():
             self.model.sample.param_modify(None, attr_name, values)
         self._update_graph()
@@ -507,12 +505,3 @@ class SliderPlot(object):
                 if layer.name == layer_name:
                     slider.set_val(self.model.fitted_kwargs[attr_name + "s"][i])
                     break
-
-    def _get_niter_estimate(self):
-        N = len(self.model.omegas)
-        if 0 < N < 10:
-            return 100
-        elif 10 <= N <= 30:
-            return 50
-        else:
-            return 30
