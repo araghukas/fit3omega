@@ -1,5 +1,6 @@
 import yaml
-from typing import NamedTuple
+from dataclasses import dataclass
+from typing import Dict, Union
 from os.path import expanduser
 
 """
@@ -16,14 +17,52 @@ Use exponentiation instead of unit prefixes. (ex: 2e-9 [m] for 2 nm)
 class Sample:
     """The sample data reader and container"""
 
+    FIT_PARAMS = ["kys", "ratio_xys", "Cvs", "Rcs"]
+
     def __init__(self, config_file):
         self.shunt = None
         self.heater = None
         self.layers = []
         self.config_file = None
-        self.load_config(config_file)
+        self._load_config(config_file)
 
-    def load_config(self, config_file):
+    def as_dict(self):
+        """reconstruct the current configuration as a YAML readable dictionary"""
+        d = {
+            "heater": {
+                "Cv": self.heater.Cv,
+                "Rc": self.heater.Rc,
+                "dRdT": self.heater.dRdT,
+                "dRdT_err": self.heater.dRdT_err,
+                "height": self.heater.height,
+                "length": self.heater.length,
+                "width": self.heater.width
+            },
+            "layers": {},
+            "shunt": {
+                "R": self.shunt.R,
+                "err": self.shunt.err
+            }
+        }
+
+        for i, layer in enumerate(self.layers):
+            d["layers"][str(i)] = {
+                "name": layer.name,
+                "height": layer.height,
+                "ky": layer.ky,
+                "ratio_xy": layer.ratio_xy,
+                "Cv": layer.Cv,
+                "Rc": layer.Rc
+            }
+
+        return d
+
+    def __str__(self):
+        """reconstructs and returns the config file as a string"""
+        return yaml.safe_dump(self.as_dict())
+
+    def _load_config(self, config_file):
+        """read the config file into instance attributes"""
         config_file = expanduser(config_file)
         with open(config_file) as f:
             d = yaml.safe_load(f)
@@ -99,22 +138,24 @@ class SampleError(Exception):
     pass
 
 
-class Shunt(NamedTuple):
+@dataclass
+class Shunt:
     """properties of the shunt resistor (current measurement)"""
     R: float
     err: float
 
 
-class Layer(NamedTuple):
+@dataclass
+class Layer:
     """properties of a layer in the thermal model"""
     name: str
     height: str or float
     ky: str or float
     ratio_xy: str or float
-    Cv: str or float        # heat capacity [J/m^3/K]
+    Cv: str or float  # heat capacity [J/m^3/K]
     Rc: str or float = 0.0  # Olson model only, thermal contact resistance to layer below
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Union[str, float]]:
         return {
             "name": self.name,
             "height": self.height,

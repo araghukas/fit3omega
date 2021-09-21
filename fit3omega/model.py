@@ -2,7 +2,6 @@ import numpy as np
 
 from .sample import *
 from .data import Data, ACReading
-import fit3omega.plot as plot
 
 ROOT2 = np.sqrt(2)
 
@@ -33,7 +32,6 @@ class Model:
         else:
             raise ValueError("invalid `data` type; need str or fit3omega.data.Data")
 
-        # if true, always recalculate data-derived values (below) when accessing props.
         self._refresh_dependents = False
 
         self._Ish = None
@@ -42,13 +40,19 @@ class Model:
         self._dT2 = None
         self._power = None
 
-    def set_refresh(self, b: bool) -> None:
+    @property
+    def refresh(self) -> bool:
+        """if true, always recalculate data-derived values (below) when accessing props"""
+        return self._refresh_dependents
+
+    @refresh.setter
+    def refresh(self, b: bool) -> None:
         if b is True:
             self._refresh_dependents = True
         elif b is False:
             self._refresh_dependents = False
         else:
-            raise ValueError("argument of set_refresh is not a boolean")
+            raise ValueError("argument is not a boolean")
 
     @property
     def shunt(self) -> Shunt:
@@ -145,9 +149,6 @@ class Model:
         self._Z2 = None
         self._dT2 = None
         self._power = None
-
-    def plot_data(self, show=False):
-        return plot.plot_measured_data(self, show)
 
 
 class ApproximationWarning(Warning):
