@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from fit3omega.cli import CLI
+from old_fit3omega.cli import CLI
 
 
 def _write_blank_config():
@@ -26,7 +26,7 @@ def _launch_cli():
         if i > i_max:
             break
         if file_ == CLI.INCOMPLETE:
-            print("==> fit3omega: detected incomplete file")
+            print("==> old_fit3omega: detected incomplete file")
 
             x = ""
             while not x:
@@ -46,7 +46,7 @@ def _plot_data(sample, data, save_name, show=True):
     if save_name is None:
         save_name = os.path.abspath(data).strip(".csv") + "_plot.pdf"
     fig.savefig(save_name)
-    print("==> fit3omega: saved plot as %s" % save_name)
+    print("==> old_fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -58,7 +58,7 @@ def _plot_compare_data(sample, data1, data2, save_name, show=True):
     if save_name is None:
         save_name = os.path.abspath(data1).strip(".csv") + "_compare_plot.pdf"
     fig.savefig(save_name)
-    print("==> fit3omega: saved plot as %s" % save_name)
+    print("==> old_fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -79,7 +79,7 @@ def _fit_data_general_model(sample,
     if save_name is None:
         save_name = os.path.abspath(data).rstrip(".csv") + "_fit.pdf"
     fig.savefig(save_name)
-    print("==> fit3omega: saved plot as %s" % save_name)
+    print("==> old_fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -101,7 +101,7 @@ def _fit_data_linear_model(sample, data, data_lims, save_name, thresh, min_lengt
     if save_name is None:
         save_name = os.path.abspath(data).rstrip(".csv") + "_fit.pdf"
     fig.savefig(save_name)
-    print("==> fit3omega: saved plot as %s" % save_name)
+    print("==> old_fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -116,7 +116,7 @@ def _launch_slider_plot(sample, data, data_lims, save_name, ehp):
     sp.plot_initial_state()
     if save_name is not None:
         sp.fig.savefig(save_name)
-        print("==> fit3omega: saved plot as %s" % save_name)
+        print("==> old_fit3omega: saved plot as %s" % save_name)
     exit(0)
 
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
                             save_name=args.save_name,
                             ehp=args.enable_heater_params)
     else:
-        print("==> fit3omega: no arguments, exiting.")
+        print("==> old_fit3omega: no arguments, exiting.")
         exit(0)
 
 # TODO: double check this module still works

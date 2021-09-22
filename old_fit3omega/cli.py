@@ -8,7 +8,7 @@ import os
 class CLI:
     HEADER = (
             "=================================\n"
-            "    fit3omega config generator   \n"
+            "    old_fit3omega config generator   \n"
             "=================================\n"
             "%s\n"
             "\n"
@@ -137,7 +137,7 @@ class CLI:
     def save_data(self):
         x = ""
         while not x:
-            x = input("==> fit3omega: save configuration as? ")
+            x = input("==> old_fit3omega: save configuration as? ")
         file_ = os.path.join(os.getcwd(), x)
         with open(file_, 'w') as f:
             yaml.safe_dump(self.data, f, sort_keys=False)
@@ -175,7 +175,7 @@ class CLI:
 
                     with open(self.INCOMPLETE, 'w') as f:
                         yaml.safe_dump(self.data, f, sort_keys=False)
-                    print("==> fit3omega: input error '%s'; dumped incomplete config..." % x)
+                    print("==> old_fit3omega: input error '%s'; dumped incomplete config..." % x)
                     exit(1)
             self.data[k1][str(i + 1)] = d
 
@@ -206,5 +206,5 @@ class CLI:
 
             with open(self.INCOMPLETE, 'w') as f:
                 yaml.safe_dump(self.data, f, sort_keys=False)
-            print("==> fit3omega: dumped incomplete config...")
+            print("==> old_fit3omega: dumped incomplete config...")
             exit(1)

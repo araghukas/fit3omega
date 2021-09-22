@@ -1,4 +1,4 @@
-from fit3omega.sample import Sample
+from old_fit3omega.sample import Sample
 
 
 class VarSample(Sample):

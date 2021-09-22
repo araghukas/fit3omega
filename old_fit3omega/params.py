@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Tuple, Dict, Union
 
-from fit3omega.sample import Sample
+from old_fit3omega.sample import Sample
 
 
 class ParameterMap:
@@ -28,7 +28,7 @@ class ParameterMap:
     @sample.setter
     def sample(self, _sample):
         if type(_sample) is not Sample:
-            raise ValueError("sample must be a fit3omega.sample.Sample instance.")
+            raise ValueError("sample must be a old_fit3omega.sample.Sample instance.")
         self._sample = _sample
 
     def __init__(self, sample: Sample):

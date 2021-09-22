@@ -5,9 +5,9 @@ from typing import Tuple
 from math import pi as PI
 import numpy as np
 
-from fit3omega.base import _set_mpl_defaults
-from fit3omega.varsample import VarSample
-from fit3omega.fit import FitGeneral
+from old_fit3omega.base import _set_mpl_defaults
+from old_fit3omega.varsample import VarSample
+from old_fit3omega.fit import FitGeneral
 
 
 class SliderPlot(object):

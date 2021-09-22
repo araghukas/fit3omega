@@ -6,9 +6,9 @@ from math import pi as PI
 from typing import Tuple
 import numpy as np
 
-from fit3omega.data import ACReading
-from fit3omega.model import Model
-from fit3omega.result import FitResult
+from old_fit3omega.data import ACReading
+from old_fit3omega.model import Model
+from old_fit3omega.result import FitResult
 
 
 class BaseFitter(ABC):
@@ -55,7 +55,7 @@ class BaseFitter(ABC):
     @model.setter
     def model(self, m):
         if type(m) is not Model:
-            raise ValueError("model must be a fit3omega.model.Model instance.")
+            raise ValueError("model must be a old_fit3omega.model.Model instance.")
         self._model = m
 
     def set_data_limits(self, start: int, end: int) -> None:

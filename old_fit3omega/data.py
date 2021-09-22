@@ -1,4 +1,3 @@
-"""module for managing the measured voltage data"""
 import pandas as pd
 import numpy as np
 
@@ -16,8 +15,7 @@ class ACReading:
     def __neg__(self):
         return ACReading(-self.x, -self.y, -self.xerr, -self.yerr)
 
-    def as_complex(self) -> np.ndarray:
-        """returns the complex numbers representing the x and y readings"""
+    def as_complex(self):
         return self.x + 1j * self.y
 
 
@@ -65,16 +63,14 @@ class Data:
     def __len__(self):
         return len(self.data)
 
-    def set_limits(self, start: int, end: int) -> None:
-        """truncate the data range by omitting points at the start and/or end"""
+    def set_limits(self, start: int, end: int):
         self._V = None
         self._V3 = None
         self._Vsh = None
         self._start = int(start)
         self._end = int(end)
 
-    def reset(self) -> None:
-        """reset the data to the initial state"""
+    def reset(self):
         self._start = None
         self._end = None
         self._V = None
@@ -86,25 +82,21 @@ class Data:
         else:
             self._error = zero_error_data(self._data)
 
-    def drop_row(self, row_index) -> None:
-        """omit the entire row of data at the specified index"""
+    def drop_row(self, row_index):
         self._data = self._data.drop(row_index, axis=0)
         if self._error is not None:
             self._error = self._error.drop(row_index, axis=0)
 
     @property
     def data(self) -> pd.DataFrame:
-        """dataframe containing all the voltage data"""
         return self._data[self._start:self._end]
 
     @property
     def data_file(self) -> str:
-        """file from which data is/was read"""
         return self._data_file
 
     @property
     def error(self) -> pd.DataFrame:
-        """a dataframe of error values for all the voltage data"""
         if self._error is None:
             raise ValueError("no error data has been initialized")
         return self._error[self._start:self._end]
@@ -126,8 +118,7 @@ class Data:
         self._error_file = error_csv
 
     @property
-    def no_error(self) -> bool:
-        """indicates the existence of error data"""
+    def no_error(self):
         return self._error_file is None
 
     @property
@@ -161,7 +152,6 @@ class Data:
         return self._Vsh
 
     def _get_reading(self, key) -> ACReading:
-        """converts the voltage data to ACReading instances"""
         args = tuple()
         for k in self.CSV_COLS[key]:
             # average voltages (x, y)
@@ -175,6 +165,5 @@ class Data:
 
 
 def zero_error_data(df: pd.DataFrame) -> pd.DataFrame:
-    """produces all-zero error data as stand-in for missing error values"""
     cols = ['d' + c for c in df.columns]
     return pd.DataFrame(np.zeros((len(df), len(cols))), columns=cols)
