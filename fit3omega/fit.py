@@ -29,10 +29,9 @@ class Fit3omega(Model):
             Rth = self.sample.heater.Rc
             Cv = self.sample.heater.Cv
             d = self.sample.heater.height
-            area = self.sample.heater.width * self.sample.heater.length
+            area = self._heater_area
             T2 = ((cT2_raw + Rth * self.power.norm / area)
                   / (1.0 + 2.0j * self.data.omegas * Cv * d * (Rth + cT2_raw * area / self.power.norm)))
-
             # NOTE: error is not scaled
             self._T2 = ACReading(T2.real, T2.imag, T2_measured_raw.xerr, T2_measured_raw.yerr)
 
@@ -46,7 +45,7 @@ class Fit3omega(Model):
     @property
     def fitted_T2(self) -> np.ndarray:
         """complex array for fitted temperature rise at each frequency"""
-        return self.T2_function(*self.sample.substitute(self.result.x))
+        return self.T2_function(*self.sample.substitute(self.sample.x))
 
     def __init__(self,
                  sample: Union[str, SampleParameters],
