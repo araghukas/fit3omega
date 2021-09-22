@@ -16,6 +16,29 @@ class Fit3omega(Model):
     """fits sample parameters to the measured voltage data"""
 
     @property
+    def T2(self) -> ACReading:
+        """
+        Average 2ω temperature oscillations at each ω
+        CORRECTED for heater properties using Borca-Tasciuc (Ref. 1) Eq. (20)
+
+        NOTE: The correction has no effect if Rth and Cv or d are 0.
+        """
+        if self._T2 is None or self._refresh_dependents:
+            T2_measured_raw = super().T2
+            cT2_raw = T2_measured_raw.as_complex()
+            Rth = self.sample.heater.Rc
+            Cv = self.sample.heater.Cv
+            d = self.sample.heater.height
+            area = self.sample.heater.width * self.sample.heater.length
+            T2 = ((cT2_raw + Rth * self.power.norm / area)
+                  / (1.0 + 2.0j * self.data.omegas * Cv * d * (Rth + cT2_raw * area / self.power.norm)))
+
+            # NOTE: error is not scaled
+            self._T2 = ACReading(T2.real, T2.imag, T2_measured_raw.xerr, T2_measured_raw.yerr)
+
+        return self._T2
+
+    @property
     def result(self) -> 'FitResult':
         """result of the latest fit"""
         return self._result
