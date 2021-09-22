@@ -140,7 +140,7 @@ class SliderFit(Fit3omega):
     slider_valfmt = "%.2e"
 
     error_fmt = "error: {:<10,.6e}"
-    error_green_thresh = 0.005
+    error_green_thresh = 0.01
 
     def _create_axes(self):
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
@@ -179,13 +179,13 @@ class SliderFit(Fit3omega):
             )
             # register the new slider
             self.sample_sliders[name_string] = parameter_slider
-            self.sample_sliders[name_string].on_changed(self._apply_sliders)
+            self.sample_sliders[name_string].on_changed(self._apply_sample_sliders)
             self._n_sliders += 1
 
         # prepare setup parameter sliders (Rsh, dRdT, length, width)
         if enable_heater_params:
             heater_params = dict(
-                dRdT=self.sample.heater.dRdT,
+                # dRdT=self.sample.heater.dRdT,
                 # width=self.model.sample.heater.width,
                 # length=self.model.sample.heater.length,
                 Cv=self.sample.heater.Cv,
@@ -203,7 +203,7 @@ class SliderFit(Fit3omega):
                     valinit=v,
                     valfmt=self.slider_valfmt
                 )
-                self.heater_sliders[k].on_changed(self._apply_sliders)
+                self.heater_sliders[k].on_changed(self._apply_heater_sliders)
                 self._n_sliders += 1
 
     def _create_buttons(self):
@@ -241,7 +241,6 @@ class SliderFit(Fit3omega):
                  frac: float = 0.99,
                  enable_heater_params: bool = True):
         super().__init__(sample, data)
-        self.sample.refresh = True
 
         mpl.rc("font", family="monospace")
         self.frac = frac
@@ -253,7 +252,11 @@ class SliderFit(Fit3omega):
         self._n_sliders = 0
 
         # PLOT INITIAL STATE
-        # ------------------
+        self._refresh_dependents = True
+        self._plot_initial_state(enable_heater_params)
+
+    def _plot_initial_state(self, enable_heater_params: bool) -> None:
+        """prepare the tool and show the window"""
         _set_mpl_defaults()
         self._create_axes()
         self._plot_markers_and_curves()
@@ -282,14 +285,17 @@ class SliderFit(Fit3omega):
             layer = self.sample.get_layer(layer_name)
             slider.set_val(layer.__getattribute__(param_name))
 
-    def _apply_sliders(self, _) -> None:
-        """change calculation parameters based on slider values"""
+    def _apply_sample_sliders(self, _) -> None:
+        """change sample parameters based on slider values"""
         for label, slider in self.sample_sliders.items():
             param_name, layer_name = label.split('.')
             self.sample.modify_layer(layer_name, param_name, slider.val)
+        self._update_graph()
+
+    def _apply_heater_sliders(self, _) -> None:
+        """change heater parameters based on slider values"""
         for label, slider in self.heater_sliders.items():
             self.sample.modify_heater(label, slider.val)
-            print(self.sample.heater)
         self._update_graph()
 
     def _reset_sliders(self, _) -> None:
@@ -333,7 +339,7 @@ class SliderFit(Fit3omega):
 
     def _get_fitline_data(self) -> Tuple[np.ndarray, np.ndarray, float]:
         """returns current T_real, T_imag, and the error vs. measured data"""
-        T_func_vals = self.T2_function(*self.sample.argv)
+        T_func_vals = self.fitted_T2
         err = self.objective_func(self.sample.x)
         return T_func_vals.real, T_func_vals.imag, err
 
