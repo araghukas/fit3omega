@@ -273,17 +273,12 @@ class SliderFit(Fit3omega):
         for k in self.sample.parameters.keys():
             param_name, layer_name = k.split('.')
             self.sample.modify_layer(layer_name, param_name, x[i])
+            self.sample_sliders[k].set_val(x[i])
             i += 1
 
         # update the graph to show fitted curve
-        self._update_graph()
         print(self.result)
-
-        # put sliders in fitted positions
-        for label, slider in self.sample_sliders.items():
-            param_name, layer_name = label.split('.')
-            layer = self.sample.get_layer(layer_name)
-            slider.set_val(layer.__getattribute__(param_name))
+        self._update_graph()
 
     def _apply_sample_sliders(self, _) -> None:
         """change sample parameters based on slider values"""

@@ -59,7 +59,6 @@ class SampleParameters:
     FIELDS = ("kys", "ratio_xys", "Cvs", "Rcs")
 
     def __post_init__(self):
-        self._layers_by_name = {layer.name: layer for layer in self.layers}
         self._validate_layer_names()
 
     def _validate_layer_names(self) -> None:
@@ -140,18 +139,26 @@ class SampleParameters:
                       field_name: str,
                       new_value: float) -> None:
         """modify the value of a field in the `heater` attribute"""
-        self.heater.__dict__[field_name] = new_value
+        self.heater.__setattr__(field_name, new_value)
 
     def modify_layer(self,
-                     layer_name: int,
+                     layer_name: str,
                      field_name: str,
                      new_value: float) -> None:
         """modify the value of a field in a specific layer"""
-        self._layers_by_name[layer_name].__dict__[field_name] = new_value
+        self.get_layer(layer_name).__setattr__(field_name, new_value)
 
     def get_layer(self, layer_name: str) -> Layer:
         """return (a ref to) the layer with the specified name"""
-        return self._layers_by_name[layer_name]
+        for layer in self.layers:
+            if layer.name == layer_name:
+                return layer
+
+        raise ValueError(f"no layer named '{layer_name}'")
+
+    def get_value(self, layer_name: str, param_name: str) -> float:
+        """return the value of the parameter from the specified layer"""
+        return self.get_layer(layer_name).__getattribute__(param_name)
 
     def substitute(self, partial_argv: Sequence[float]) -> Tuple[List[float]]:
         """substitute the partial argument vector into complete arguments at fit indices"""
