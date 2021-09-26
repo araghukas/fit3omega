@@ -7,6 +7,7 @@ ALL quantities should be specified in S.I. units:
 
 Use exponentiation instead of unit prefixes. (ex: 2e-9 [m] for 2 nm)
 """
+import copy
 import os
 import yaml
 import numpy as np
@@ -176,10 +177,7 @@ class SampleParameters:
 
     def copy(self) -> 'SampleParameters':
         """return a copy of this instance"""
-        return SampleParameters(self.heater,
-                                self.layers,
-                                self.shunt,
-                                self.fit_indices)
+        return copy.deepcopy(self)
 
 
 class ConfigFileError(Exception):
@@ -235,11 +233,3 @@ def load_sample_parameters(config_filename: str) -> SampleParameters:
         layers.append(Layer(**layer_kwargs))
 
     return SampleParameters(heater, layers, shunt, fit_indices)
-
-
-if __name__ == "__main__":
-    # test loading some samples
-    sample_ = "../sample/2232_2.f3oc"
-    os.system("cat %s" % sample_)
-    s = load_sample_parameters(sample_)
-    print(s)

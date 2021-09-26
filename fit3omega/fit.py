@@ -31,7 +31,8 @@ class Fit3omega(Model):
             d = self.sample.heater.height
             area = self._heater_area
             T2 = ((cT2_raw + Rth * self.power.norm / area)
-                  / (1.0 + 2.0j * self.data.omegas * Cv * d * (Rth + cT2_raw * area / self.power.norm)))
+                  / (1.0 + 2.0j * self.data.omegas * Cv * d * (
+                            Rth + cT2_raw * area / self.power.norm)))
             # NOTE: error is not scaled
             self._T2 = ACReading(T2.real, T2.imag, T2_measured_raw.xerr, T2_measured_raw.yerr)
 
@@ -58,6 +59,7 @@ class Fit3omega(Model):
         super().__init__(sample, data)
 
         # store initial configuration to track changes
+        self._previous_sample = sample.copy()
         self._original_sample = sample.copy()
 
         # C-extension for computing integrals
@@ -88,7 +90,7 @@ class Fit3omega(Model):
                           method='TNC',
                           tol=tol,
                           bounds=utils.positive_bounds(x0, min_frac=1e-6, max_frac=1e3),
-                          options={'disp': True, 'maxiter': 200, 'stepmx': 100})
+                          options={'disp': False, 'maxiter': 200, 'stepmx': 100})
 
         self._record_result(result)
 
@@ -132,14 +134,15 @@ class Fit3omega(Model):
         self._integrators_ready = True
 
     def _record_result(self, result: OptimizeResult):
-        self._result = FitResult(result, self._original_sample)
+        self._result = FitResult(result, self._previous_sample)
+        self._previous_sample = self.sample.copy()
 
 
 @dataclass(frozen=True)
 class FitResult:
     """a container for results of a data fit"""
     result: OptimizeResult
-    original_sample: SampleParameters
+    previous_sample: SampleParameters
 
     @property
     def x(self) -> np.ndarray:
@@ -154,18 +157,18 @@ class FitResult:
     @property
     def summary(self) -> str:
         """return a string summarized the result"""
-        x0 = self.original_sample.x
+        x0 = self.previous_sample.x
         diff_percents = [1e2 * (xf - xi) / xi for xi, xf in zip(x0, self.x)]
         diff_signs = ['+' if p >= 0 else '-' for p in diff_percents]
 
         props_by_layer = {}
-        for i, idx in enumerate(self.original_sample.fit_indices):
-            layer_name = self.original_sample.layers[idx[1]].name
-            param_name = self.original_sample.FIELDS[idx[0]].rstrip('s')
+        for i, idx in enumerate(self.previous_sample.fit_indices):
+            layer_name = self.previous_sample.layers[idx[1]].name
+            param_name = self.previous_sample.FIELDS[idx[0]].rstrip('s')
             change_str = (
-                "{:>8} --> {:.2e} ({} %)"
-                .format(param_name, self.x[i],
-                        diff_signs[i] + "%.2f" % abs(diff_percents[i]))
+                "{:>8} --> {:.2e} ({} %)".format(param_name,
+                                                 self.x[i],
+                                                 diff_signs[i] + "%.2f" % abs(diff_percents[i]))
             )
             if layer_name in props_by_layer:
                 props_by_layer[layer_name].append(change_str)
