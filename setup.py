@@ -1,6 +1,6 @@
 import numpy as np
 from setuptools import setup, find_packages, Extension
-from old_fit3omega import __version__
+from fit3omega import __version__
 
 C_module = Extension("integrate",
                      sources=["./integrate/integrate.c",
@@ -12,14 +12,14 @@ C_module = Extension("integrate",
                      include_dirs=[np.get_include()])
 
 setup(
-    name="old_fit3omega",
+    name="fit3omega",
     version=__version__,
     description="Data analyzer for 3ω thermal conductivity measurements",
     author="Ara Ghukasyan",
     author_email="ghukasa@mcmaster.ca",
     license="MIT License",
     packages=find_packages(),
-    package_data={"old_fit3omega": ["integrate/*"]},
+    package_data={"fit3omega": ["integrate/*"]},
     install_requires=['pyyaml', 'pandas', 'numpy', 'matplotlib', 'scipy'],
     ext_modules=[C_module]
 )
