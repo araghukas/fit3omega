@@ -180,6 +180,7 @@ class FitResult:
             lines.append(layer_name + ":")
             for change_str in change_str_list:
                 lines.append("    " + change_str)
+        lines.append("\nERROR: %.6e" % self.error)
 
         return "\n".join(lines)
 

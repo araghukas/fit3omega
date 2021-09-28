@@ -103,10 +103,10 @@ def plot_fitted_data(fitter: Fit3omega,
     ax.errorbar(X, fitter.T2.y, fitter.T2.yerr * fitter.T2.y,
                 linewidth=0, elinewidth=.5, color=cs[1], label=ls[1])
 
-    fitted_T2 = fitter.fitted_T2
+    fitted_T2 = fitter.T2_function(*fitter.sample.substitute(fitter.result.x))
     ax.plot(X, fitted_T2.real, markersize=0, color=cs[0])
     ax.plot(X, fitted_T2.imag, markersize=0, color=cs[1])
-    ax.text(0.1, 0.3, fitter.result.summary.replace('\t', "    ").replace("\n", "\n\n"),
+    ax.text(0.1, 0.37, fitter.result.summary.replace('\t', "    ").replace("\n", "\n\n"),
             transform=ax.transAxes, fontsize=8)
 
     ax.legend(frameon=False)
