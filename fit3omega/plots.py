@@ -1,4 +1,5 @@
 """a module of plotting function to visualize measured and fitted data"""
+import os
 from typing import Tuple, Union, List
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -230,6 +231,13 @@ class SliderFit(Fit3omega):
                                      hovercolor=self.button_hovercolor)
         self.buttons["Fit"].on_clicked(self._run_fit_and_update)
 
+        # save state button
+        save_button_dims = fit_button_dims
+        save_button_dims[0] += 0.12
+        self.buttons["Save"] = Button(plt.axes(save_button_dims), "Save",
+                                      hovercolor=self.button_hovercolor)
+        self.buttons["Save"].on_clicked(self._save_sample_state)
+
         err0 = self.objective_func(self.sample.x)
         self.ax.text(0.0, 1.025, self.error_fmt.format(err0), transform=self.ax.transAxes,
                      fontsize=10, color=self._get_error_color(err0), fontweight="bold")
@@ -279,6 +287,18 @@ class SliderFit(Fit3omega):
         # update the graph to show fitted curve
         print(self.result)
         self._update_graph()
+
+    def _save_sample_state(self, _) -> None:
+        """save the sample state into an f3oc file"""
+        default_name = "./saved_state{}.f3oc"
+        save_name = default_name.format("")
+        i = 1
+        while os.path.isfile(save_name):
+            save_name = default_name.format("(%d)" % i)
+            i += 1
+
+        self.sample.write_state(save_name)
+        print("==> fit3omega: saved sample config\n%s" % save_name)
 
     def _apply_sample_sliders(self, _) -> None:
         """change sample parameters based on slider values"""

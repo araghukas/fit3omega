@@ -112,22 +112,22 @@ class SampleParameters:
         """a dictionary of the present sample parameters"""
         return {
             "heater": {
-                "Cv": self.heater.Cv,
-                "Rc": self.heater.Rc,
-                "dRdT": self.heater.dRdT,
-                "dRdT_err": self.heater.dRdT_err,
-                "height": self.heater.height,
-                "length": self.heater.length,
-                "width": self.heater.width
+                "Cv": float(self.heater.Cv),
+                "Rc": float(self.heater.Rc),
+                "dRdT": float(self.heater.dRdT),
+                "dRdT_err": float(self.heater.dRdT_err),
+                "height": float(self.heater.height),
+                "length": float(self.heater.length),
+                "width": float(self.heater.width)
             },
             "layers": {
                 str(i): {
                     "name": layer.name,
-                    "height": layer.height,
-                    "ky": layer.ky,
-                    "ratio_xy": layer.ratio_xy,
-                    "Cv": layer.Cv,
-                    "Rc": layer.Rc
+                    "height": float(layer.height),
+                    "ky": float(layer.ky),
+                    "ratio_xy": float(layer.ratio_xy),
+                    "Cv": float(layer.Cv),
+                    "Rc": float(layer.Rc)
                 } for i, layer in enumerate(self.layers)
             },
             "shunt": {
