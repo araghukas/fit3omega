@@ -3,7 +3,8 @@ import os
 import argparse
 
 from .fit import Fit3omega
-from .plots import plot_fitted_data, plot_measured_data, SliderFit
+from .plots import plot_fitted_data, plot_measured_data
+from .slider_gui import SliderFit
 
 
 def main(args: argparse.Namespace) -> None:
