@@ -8,19 +8,22 @@ from .slider_gui import SliderFit
 
 
 def main(args: argparse.Namespace) -> None:
+    ft = Fit3omega(args.sample_file, args.data_file)
+    if args.data_lims:
+        a, b = args.data_lims
+        ft.data.set_limits(a, b)
     if args.fit:
-        _run_fit(args)
+        _run_fit(args, ft)
         exit()
     if args.plot:
-        _plot_measured_data(args)
+        _plot_measured_data(args, ft)
         exit()
 
     _launch_slider_plot(args)
 
 
-def _run_fit(args: argparse.Namespace) -> None:
+def _run_fit(args: argparse.Namespace, ft: Fit3omega) -> None:
     """create a fitter instance, run a fit, and display the results"""
-    ft = Fit3omega(args.sample_file, args.data_file)
     ft.fit()
     print(ft.result)
 
@@ -31,9 +34,8 @@ def _run_fit(args: argparse.Namespace) -> None:
         print("==> fit3omega: saved plot\n%s" % save_name)
 
 
-def _plot_measured_data(args: argparse.Namespace) -> None:
+def _plot_measured_data(args: argparse.Namespace, ft: Fit3omega) -> None:
     """create a plot of the measured data"""
-    ft = Fit3omega(args.sample_file, args.data_file)
     save_name = os.path.abspath(args.data_file).strip(".csv") + "_measured_plot.pdf"
     fig = plot_measured_data(ft, show=(not args.hide))
     fig.savefig(save_name)
@@ -78,5 +80,11 @@ if __name__ == "__main__":
                         help="suppress showing plots",
                         action='store_true',
                         default=False)
+
+    parser.add_argument("-data_lims",
+                        help="limit the data range by taking data[a:b]",
+                        nargs=2,
+                        type=int,
+                        default=None)
 
     main(parser.parse_args())
