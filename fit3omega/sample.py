@@ -192,6 +192,8 @@ def load_sample_parameters(config_filename: str) -> SampleParameters:
         if type(d) is str:
             raise ConfigFileError(f"invalid sample configuration file:\n {filename}")
 
+    d = convert_parameters_to_float(d)
+
     if "heater" not in d:
         raise ConfigFileError("missing 'heater' section.")
     if "layers" not in d:
@@ -233,3 +235,38 @@ def load_sample_parameters(config_filename: str) -> SampleParameters:
         layers.append(Layer(**layer_kwargs))
 
     return SampleParameters(heater, layers, shunt, fit_indices)
+
+
+def convert_parameters_to_float(d: dict) -> dict:
+    """
+    Try to convert all numerical parameters to float, because the
+    YAML reader may fail to do so.
+    """
+
+    # convert everything to float if possible
+    for k, v in d["heater"].items():
+        try:
+            d["heater"][k] = float(v)
+        except ValueError:
+            raise ConfigFileError(f"failed to convert heater parameter '{k}' to float.")
+    for k, v in d["layers"].items():
+        for k1, v1 in v.items():
+            typ_v1 = type(v1)
+            if typ_v1 is str and k1 != 'name' and not v1.endswith('*'):
+                try:
+                    v[k1] = float(v1)
+                except ValueError:
+                    raise ConfigFileError(
+                        f"failed to convert layer '{k}' parameter "
+                        f"'{k1}' value {v1} (type {typ_v1}) to float."
+                    )
+    for k, v in d["shunt"].items():
+        try:
+            d["shunt"][k] = float(v)
+        except ValueError:
+            raise ConfigFileError(
+                f"failed to convert shunt parameter "
+                f"'{k}' value '{v}' (type {type(v)}) to float."
+            )
+
+    return d
