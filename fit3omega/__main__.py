@@ -44,7 +44,10 @@ def _plot_measured_data(args: argparse.Namespace, ft: Fit3omega) -> None:
 
 def _launch_slider_plot(args: argparse.Namespace) -> None:
     """create and display a slider plot"""
-    SliderFit(args.sample_file, args.data_file)
+    sf = SliderFit(args.sample_file, args.data_file)
+    if args.data_lims:
+        sf.data.set_limits(*args.data_lims)
+    sf.show()
 
 
 if __name__ == "__main__":

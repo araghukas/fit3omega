@@ -56,7 +56,11 @@ class SliderFit(Fit3omega):
 
         # PLOT INITIAL STATE
         self._refresh_dependents = True
-        self._plot_initial_state(enable_heater_params)
+        self._enable_heater_params = enable_heater_params
+
+    def show(self):
+        """display the slider plot"""
+        self._plot_initial_state(self._enable_heater_params)
 
     def _create_axes(self):
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
