@@ -100,7 +100,7 @@ class Fit3omega(Model):
         T2_func_values = self.T2_function(*args_T2)
         dx = T2_func_values.real - self.T2.x
         dy = T2_func_values.imag - self.T2.y
-        return sum((dx**2 + dy**2) / self.T2.norm_sq) / self._n_omegas
+        return sum(dx**2 + dy**2) / self._n_omegas
 
     def T2_function(self,
                     kys: List[float],
