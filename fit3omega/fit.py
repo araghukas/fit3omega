@@ -48,6 +48,15 @@ class Fit3omega(Model):
         """complex array for fitted temperature rise at each frequency"""
         return self.T2_function(*self.sample.substitute(self.sample.x))
 
+    @property
+    def ignore_imag_err(self) -> bool:
+        """use only in-phase data in calculating MSE"""
+        return self._ignore_imag_err
+
+    @ignore_imag_err.setter
+    def ignore_imag_err(self, b: bool):
+        self._ignore_imag_err = bool(b)
+
     def __init__(self,
                  sample: Union[str, SampleParameters],
                  data: Union[str, Data]):
@@ -64,7 +73,7 @@ class Fit3omega(Model):
 
         # C-extension for computing integrals
         self._integrator_module = __import__('integrate')
-        self._integrators_ready = False
+        # self._integrators_ready = False
 
         # some constants
         self._layer_heights = [layer.height for layer in self.sample.layers]
@@ -74,7 +83,10 @@ class Fit3omega(Model):
         # fit result (assigned by calling the `fit` method)
         self._result = None
 
-    def fit(self, tol: float = 1e-6, x0: np.ndarray = None) -> None:
+        # objective function selector
+        self._ignore_imag_err = False
+
+    def fit(self, tol: float = 1e-12, x0: np.ndarray = None) -> None:
         """
         Run the fitting algorithm to estimate parameters.
 
@@ -84,7 +96,12 @@ class Fit3omega(Model):
         if x0 is None:
             x0 = self.sample.x
 
-        result = minimize(fun=self.objective_func,
+        if self._ignore_imag_err:
+            f_obj = self.objective_func_real
+        else:
+            f_obj = self.objective_func
+
+        result = minimize(fun=f_obj,
                           x0=x0,
                           args=None,
                           method='TNC',
@@ -102,6 +119,13 @@ class Fit3omega(Model):
         dy = T2_func_values.imag - self.T2.y
         return sum(dx**2 + dy**2) / self._n_omegas
 
+    def objective_func_real(self, *args) -> float:
+        """returns the value of the objective function (MSE) using only in-phase data"""
+        args_T2 = self.sample.substitute(args[0])
+        T2_func_values = self.T2_function(*args_T2)
+        dx = T2_func_values.real - self.T2.x
+        return sum(dx**2) / self._n_omegas
+
     def T2_function(self,
                     kys: List[float],
                     ratio_xys: List[float],
@@ -111,8 +135,8 @@ class Fit3omega(Model):
         Computes a prediction of the 2ω temperature rise based on
         arbitrary layer parameters.
         """
-        if not self._integrators_ready:
-            self._init_integrators()
+        # if not self._integrators_ready:
+        self._init_integrators()
 
         integral = self._integrator_module.ogc_integral(
             self._layer_heights,
@@ -131,7 +155,7 @@ class Fit3omega(Model):
                                         1e-6,
                                         15.,
                                         len(self.sample.layers))
-        self._integrators_ready = True
+        # self._integrators_ready = True
 
     def _record_result(self, result: OptimizeResult):
         self._result = FitResult(result, self._previous_sample)

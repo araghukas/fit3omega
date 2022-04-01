@@ -47,6 +47,8 @@ def _launch_slider_plot(args: argparse.Namespace) -> None:
     sf = SliderFit(args.sample_file, args.data_file)
     if args.data_lims:
         sf.data.set_limits(*args.data_lims)
+    if args.ignore_imag_err:
+        sf.ignore_imag_err = args.ignore_imag_err
     sf.show()
 
 
@@ -81,6 +83,11 @@ if __name__ == "__main__":
 
     parser.add_argument("-hide", "-d",
                         help="suppress showing plots",
+                        action='store_true',
+                        default=False)
+
+    parser.add_argument("-ignore_imag_err",
+                        help="use only the error from the real part in objective function",
                         action='store_true',
                         default=False)
 
