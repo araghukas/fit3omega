@@ -9,4 +9,4 @@ ref/
 scrap/
 integrate/*debug*
 *.sh
-
+fit3omega.egg-info/
