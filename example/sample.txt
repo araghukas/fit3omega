@@ -1,25 +1,36 @@
-heater:                 # parameters for the heater line
-  height: 0.0
-  Cv: 0.0
-  Rc: 5.0e-7
-  length: 0.001
-  width: 30.0e-6
-  dRdT: 0.0962
-  dRdT_err: 0.05        # this means ±5%
+#
+# This is an example of a configuration file for a 2-layer sample.
+# -----------------------------------------------------------------------------
 
-layers:                 # properties below are required for each layer
+# parameters for the heater line
+
+heater:
+  height: 1.57e-7       # [m]
+  Cv: 0.0               # [J / m^2 / K]
+  Rc: 5.0e-7            # [m^2 * K / W]
+  length: 0.001         # [m]
+  width: 30.0e-6        # [m]
+  dRdT: 0.0962          # [Ω / ˚C]
+  dRdT_err: 0.02        # this means ±2%
+
+# properties below are required for each layer
+
+layers:
   '1':
     name: BCB
-    height: 0.925e-6
-    ky: 0.20*           # variable parameters are marked with a '*'
-    ratio_xy: 1.0
-    Cv: 2300724.0*
+    height: 0.925e-6    # [m]
+    ky: 0.20*           # [W/m/K], variable parameters are marked with a '*'
+    ratio_xy: 1.0       # [1], anisotropy ratio 'ψ'
+    Cv: 2300724.0*      # [J / m^2 / K]
   '2':
     name: Si
     height: 300.0e-6
     ky: 150.0
     ratio_xy: 1.0
     Cv: 1630300.0
-shunt:                  # specify shunt resistance and precision (R = 0.099 ± 1%)
+
+# specify shunt resistance and precision (R = 0.099 ± 1%)
+
+shunt:
   R: 0.099
   err: 0.01
