@@ -1,16 +1,17 @@
-heater:
+heater:                 # parameters for the heater line
   height: 0.0
   Cv: 0.0
   Rc: 5.0e-7
   length: 0.001
   width: 30.0e-6
   dRdT: 0.0962
-  dRdT_err: 0.05
-layers:
+  dRdT_err: 0.05        # this means ±5%
+
+layers:                 # properties below are required for each layer
   '1':
     name: BCB
     height: 0.925e-6
-    ky: 0.20*
+    ky: 0.20*           # variable parameters are marked with a '*'
     ratio_xy: 1.0
     Cv: 2300724.0*
   '2':
@@ -19,6 +20,6 @@ layers:
     ky: 150.0
     ratio_xy: 1.0
     Cv: 1630300.0
-shunt:
+shunt:                  # specify shunt resistance and precision (R = 0.099 ± 1%)
   R: 0.099
   err: 0.01
