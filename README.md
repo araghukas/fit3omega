@@ -16,4 +16,4 @@ is to invoke `fit3omega` from the command line:
 
     python -m fit3omega sample.txt data.csv
 
-Try it in the `example/` directory.
+Try it in the `example` directory.
