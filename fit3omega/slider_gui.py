@@ -198,8 +198,8 @@ class SliderFit(Fit3omega):
         self._update_graph()
 
     def _save_sample_state(self, _) -> None:
-        """save the sample state into an f3oc file"""
-        default_name = "./saved_state{}.f3oc"
+        """save the sample state into a new config file"""
+        default_name = "./saved_state{}.txt"
         save_name = default_name.format("")
         i = 1
         while os.path.isfile(save_name):
@@ -293,9 +293,3 @@ class SliderFit(Fit3omega):
                              self.T2.y * (1. + self.T2.yerr),
                              alpha=0.2, color=cy)
         self.fig.canvas.draw_idle()
-
-
-if __name__ == "__main__":
-    S = "../sample/2232_2.f3oc"
-    D = "../sample/tc3omega_data_3.0_V_vac.csv"
-    SliderFit(S, D)
