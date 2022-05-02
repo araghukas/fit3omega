@@ -66,8 +66,8 @@ class SliderFit(Fit3omega):
         self.fig, self.ax = plt.subplots(figsize=(8, 8))
         self.fig.subplots_adjust(bottom=.5, top=0.95)
         self.ax.set_xscale("log")
-        self.ax.set_ylabel(r"Sample $\widebar{T}_{2\omega}$")
-        self.ax.set_xlabel(r"$2\pi\omega$ [Hz]")
+        self.ax.set_ylabel(r"$\widebar{T}_{2\omega}$")
+        self.ax.set_xlabel(r"$\omega$ [Hz]")
 
     def _plot_markers_and_curves(self):
         X = self.data.omegas / 2. / PI
