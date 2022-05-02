@@ -64,7 +64,7 @@ class Model:
 
     @property
     def T2(self) -> ACReading:
-        """average 2ω temperature oscillations at each ω"""
+        """peak temperature oscillations at each ω"""
         if self._T2 is None or self.refresh:
             x = 2. * np.abs(self.data.V3.x) / (self.sample.heater.dRdT * self.Ish.norm)
             y = -2. * np.abs(self.data.V3.y) / (self.sample.heater.dRdT * self.Ish.norm)
