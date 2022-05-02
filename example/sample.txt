@@ -1,7 +1,7 @@
-shunt:
-  R: 0.099
-  err: 0.02
 heater:
+  height: 0.0
+  Cv: 0.0
+  Rc: 5.0e-7
   length: 0.001
   width: 30.0e-6
   dRdT: 0.0962
@@ -10,7 +10,7 @@ layers:
   '1':
     name: BCB
     height: 0.925e-6
-    ky: 0.29*
+    ky: 0.20*
     ratio_xy: 1.0
     Cv: 2300724.0*
   '2':
@@ -19,3 +19,6 @@ layers:
     ky: 150.0
     ratio_xy: 1.0
     Cv: 1630300.0
+shunt:
+  R: 0.099
+  err: 0.01
